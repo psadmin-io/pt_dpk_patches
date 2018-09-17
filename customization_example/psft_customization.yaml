@@ -1,0 +1,361 @@
+---
+
+### Deployment ###
+
+peoplesoft_base:  E:/PSoft
+
+dpk_location:     E:/PSoft/dpk
+archive_location: "%{hiera('dpk_location')}/archives"
+pt_location:      "%{hiera('peoplesoft_base')}/pt"
+db_location:      "%{hiera('peoplesoft_base')}/db"
+db_platform:      MSSQL
+setup_ohs:        false
+unicode_db:       false
+db_type:          DEMO
+install_type:     FRESH
+
+ps_home_location:       "%{hiera('pt_location')}/ps_home8.56.10"
+inventory_location:     "%{hiera('db_location')}/oraInventory"
+oracle_client_location: "%{hiera('pt_location')}/oracle-client/12.1.0.2"
+jdk_location:           "%{hiera('pt_location')}/jdk1.8.0_171"
+weblogic_location:      "%{hiera('pt_location')}/bea"
+tuxedo_location:        "%{hiera('pt_location')}/bea/tuxedo"
+ohs_location:           "%{hiera('pt_location')}/bea/ohs"
+
+
+### ACM ###
+
+gateway_node_name:         PT_LOCAL
+
+# Set to false if not using
+run_preboot_config_setup:  false
+run_postboot_config_setup: false
+
+
+### General ###
+
+domain_conn_pwd:       'password'
+
+# This setting has the following values: [all, appbatch, appserver, pia, prcs]
+# For example, if you only want to deploy PIA then this would be set to pia.
+domain_type:           all
+
+domain_user:           'domain\user'
+help_uri:              pt856pbr2
+
+
+### PS Homes ###
+
+ps_app_home:           "E:/PSoft/pt/ps_home8.56.10"
+ps_config_home:        "E:/PSoft/pt/ps_cfg_home/cs"
+ps_cust_home:          "E:/PSHomes/cust_home/prd/cs"
+tuxedo_home:           "E:/PSoft/pt/bea/tuxedo/tuxedo12.2.2.0.0_VS2015"
+
+
+### Database ###
+
+access_id:         sa1
+access_pwd:        'password'
+change_password:   false
+db_admin_pwd:      admin
+db_connect_id:     'password'
+db_connect_pwd:    'password'
+db_host_name:      sqlserv01.domain.com
+db_is_rac:         false
+db_name:           CSPRD
+db_platform:       MSSQL
+db_port:           1521
+db_service_name:   CSPRD
+db_user:           user
+db_user_pwd:       'password'
+
+
+### Windows Services ###
+# This sets up all the required service user accounts and passwords
+
+pia_service_user:        'domain\user'
+pia_service_pwd:         'password'
+prcs_service_user:       'domain\user'
+prcs_service_pwd:        'password'
+appserver_service_user:  'domain\user'
+appserver_service_pwd:   'password'
+tuxedo_service_user:     'domain\user'
+tuxedo_service_pwd:      'password'
+
+### ODBC ###
+mssql_server_list:
+  "%{hiera('db_name')}":
+    mss_server_name:  sqlserv01.domain.com
+    mss_odbc_name:    "ODBC Driver 13 for SQL Server"
+
+
+### AppServer ###
+appserver_domain_name: CSPRD1
+appserver_template:    medium
+jolt_port:             5000
+wsl_port:              6000
+
+appserver_domain_list:
+  "%{hiera('appserver_domain_name')}":
+    os_user:         "%{hiera('domain_user')}"
+    ps_cfg_home_dir: "%{hiera('ps_config_home')}"
+    template_type:   "%{hiera('appserver_template')}"
+
+    # custom domain files
+    # Specify source location to copy files from post install
+    # All files/folders in source will be copied to location specified in path
+    custom_file_settings:
+      custom_domain_files:
+        ensure:  present
+        source:  "E:/PSoft/dpk/puppet/production/data/files/appserver"
+        path:    "%{hiera('ps_config_home')}/appserv"
+
+    # Windows ONLY - Used to add environment paths to appserver service in registry
+    service_registry_settings:
+      app_hcm_service:
+        key:    HKLM\System\CurrentControlSet\Services\PsftAppServerDomain%{hiera('appserver_domain_name')}Service
+        value:  Environment
+        type:   array
+        data:
+          - PS_APP_HOME=%{lookup('ps_app_home')}
+          - PS_CFG_HOME=%{lookup('ps_config_home')}
+          - PS_CUST_HOME=%{lookup('ps_cust_home')}
+          - PS_HOME=%{lookup('ps_home_location')}
+          - TUXDIR=%{lookup('tuxedo_home')}
+          - PS_FILEDIR=%{lookup('ps_config_home')}/appserv/prcs/%{hiera('appserver_domain_name')}/files/PS_UPLOADS
+
+    db_settings:
+      db_name:        "%{hiera('db_name')}"
+      db_type:        "%{hiera('db_platform')}"
+      db_opr_id:      "%{hiera('db_user')}"
+      db_opr_pwd:     "%{hiera('db_user_pwd')}"
+      db_connect_id:  "%{hiera('db_connect_id')}"
+      db_connect_pwd: "%{hiera('db_connect_pwd')}"
+
+    config_settings:
+      Domain Settings/Domain ID:       "%{hiera('appserver_domain_name')}"
+      Trace/MailErrorReport:           "user1@domain.com;user2@domain.com"
+      SMTP Settings/SMTPServer:        "smtp1.domain.com"
+      SMTP Settings/SMTPPort:          25
+      SMTP Settings/SMTPServer1:       "smtp2.domain.com"
+      SMTP Settings/SMTPPort1:         25
+      SMTP Settings/SMTPSender:        "%{hiera('appserver_domain_name')}@domain.com"
+      SMTP Settings/SMTPSourceMachine: "%{::fqdn}"
+      PSTOOLS/Add to CLASSPATH:        "E:/Program Files/Microsoft JDBC Driver 4.1 for SQL Server/sqljdbc_4.1/enu/sqljdbc41.jar"
+      PSTOOLS/EnablePPM Agent:         0
+      PSTOOLS/JavaVM Options:          "-Xms32m -Xmx128m -Xrs -Dxdo.ConfigFile=%PS_HOME%/appserv/xdo.cfg"
+      PSAPPSRV/Min Instances:          2
+      PSAPPSRV/Max Instances:          2
+      PSAPPSRV/Max Fetch Size:         15000
+      Security/DomainConnectionPwd:    "%{hiera('domain_conn_pwd')}"
+      JOLT Listener/Port:              "%{hiera('jolt_port')}"
+      JOLT Listener/Address:           0.0.0.0
+      Workstation Listener/Port:       "%{hiera('wsl_port')}"
+      PSRENSRV/default_http_port:      80
+
+    feature_settings:
+      PUBSUB:        "Yes"
+      QUICKSRV:      "No"
+      QUERYSRV:      "No"
+      JOLT:          "Yes"
+      JRAD:          "No"
+      WSL:           "No"
+      DBGSRV:        "No"
+      RENSRV:        "Yes"
+      MCF:           "No"
+      PPM:           "No"
+      PSPPMSRV:      "No"
+      ANALYTICSRV:   "No"
+      SERVER_EVENTS: "Yes"
+      DOMAIN_GW:     "No"
+
+
+### Process Scheduler ###
+prcs_domain_name:      CSPRD1
+prcs_domain_id:        PSNT
+
+prcs_domain_list:
+  "%{hiera('prcs_domain_name')}":
+    os_user:          "%{hiera('domain_user')}"
+    ps_cfg_home_dir:  "%{hiera('ps_config_home')}"
+    ps_cust_home_dir: "%{hiera('ps_cust_home')}"
+
+    # custom domain files
+    # Specify source location to copy files from post install
+    # All files/folders in source will be copied to location specified in path
+    custom_file_settings:
+      custom_domain_files:
+        ensure:  present
+        source:  "E:/PSoft/dpk/puppet/production/data/files/prcs"
+        path:    "%{hiera('ps_config_home')}/appserv"
+
+    # Windows ONLY - Used to add environment paths to prcs service in registry
+    service_registry_settings:
+      prcs_cs_service:
+        key:    HKLM\System\CurrentControlSet\Services\PsftPrcsDomain%{hiera('prcs_domain_name')}Service
+        value:  Environment
+        type:   array
+        data:
+          - PS_APP_HOME=%{lookup('ps_app_home')}
+          - PS_CFG_HOME=%{lookup('ps_config_home')}
+          - PS_CUST_HOME=%{lookup('ps_cust_home')}
+          - PS_HOME=%{lookup('ps_home_location')}
+          - TUXDIR=%{lookup('tuxedo_home')}
+          - PS_FILEDIR=%{lookup('ps_config_home')}/appserv/prcs/%{hiera('prcs_domain_name')}/files/PS_UPLOADS
+
+    db_settings:
+      db_name:        "%{hiera('db_name')}"
+      db_type:        "%{hiera('db_platform')}"
+      db_opr_id:      "%{hiera('db_user')}"
+      db_opr_pwd:     "%{hiera('db_user_pwd')}"
+      db_connect_id:  "%{hiera('db_connect_id')}"
+      db_connect_pwd: "%{hiera('db_connect_pwd')}"
+
+    config_settings:
+      Process Scheduler/PrcsServerName:             "%{hiera('prcs_domain_id')}"
+      Security/DomainConnectionPwd:                 "%{hiera('domain_conn_pwd')}"
+      Trace/TracePPM:                               0
+      Process Scheduler/DBBIN:                      "E:\\Program Files\\Microsoft SQL Server\\140\\Tools\\Binn"
+      Process Scheduler/Allow Dynamic Changes:      "Y"
+      Process Scheduler/File Chunk Size:            8192
+      Process Scheduler/CBLBIN:                     "%{hiera('ps_cust_home')}\\CBLBIN%PS_COBOLTYPE%;%{hiera('ps_app_home')}\\CBLBIN%PS_COBOLTYPE%"
+      Process Scheduler/CRWRPTPATH:                 "%{hiera('ps_cust_home')}\\CRW;%{hiera('ps_app_home')}\\CRW"
+      Process Scheduler/WINWORD:                    "E:\\Program Files\\Microsoft Office\\Office15"
+      PSTOOLS/Enable Remote Administration:         0
+      PSTOOLS/EnablePPM Agent:                      0
+      PSTOOLS/Add to CLASSPATH:                     "E:\\Program Files\\Microsoft JDBC Driver 4.0 for SQL Server\\sqljdbc_4.0\\enu\\sqljdbc4.jar"
+      SQR/Enhanced HTML:                            "Y"
+      SQR/PSSQR:                                    "%{hiera('ps_cust_home')}\\sqr;%{hiera('ps_app_home')}\\sqr"
+      Data Mover/LastScriptsDir:                    "%{hiera('ps_cust_home')}\\scripts;%{hiera('ps_app_home')}\\scripts"
+      nVision/DrillDownDir:                         "%{hiera('ps_cust_home')}\\NVISION\\LAYOUT\\DRILLDN;%{hiera('ps_app_home')}\\NVISION\\LAYOUT\\DRILLDN"
+      nVision/LayoutDir:                            "%{hiera('ps_cust_home')}\\NVISION\\LAYOUT;%{hiera('ps_app_home')}\\NVISION\\LAYOUT"
+      nVision/MacroDir:                             "%{hiera('ps_cust_home')}\\EXCEL;%{hiera('ps_app_home')}\\EXCEL"
+      nVision/StyleDir:                             "%{hiera('ps_cust_home')}\\EXCEL\\STYLESHEETS;%{hiera('ps_app_home')}\\EXCEL\\STYLESHEETS"
+      nVision/TemplateDir:                          "%{hiera('ps_cust_home')}\\EXCEL;%{hiera('ps_app_home')}\\EXCEL"
+      Trace/MailErrorReport:                        "user1@domain.com;user2@domain.com"
+      SMTP Settings/SMTPServer:                     "smtp1.domain.com"
+      SMTP Settings/SMTPPort:                       25
+      SMTP Settings/SMTPServer1:                    "smtp2.domain.com"
+      SMTP Settings/SMTPPort1:                      25
+      SMTP Settings/SMTPSender:                     "%{hiera('prcs_domain_name')}@domain.com"
+      SMTP Settings/SMTPSourceMachine:              "%{::fqdn}"
+
+    feature_settings:
+      MSTRSRV:      "Yes"
+      APPENG:       "Yes"
+
+
+### PIA ###
+
+pia_domain_name:       pt85610cs
+pia_gateway_user:      administrator
+pia_gateway_user_pwd:  'password'
+pia_host_name:         "%{::fqdn}"
+pia_http_port:         80
+pia_https_port:        443
+pia_psserver_list:     "appserv01.domain.com:%{hiera('jolt_port')}"
+pia_site_name:         CSPRD
+pia_webprofile_name:   PROD
+report_repository_dir: "E:/psreports"
+webserver_type:        weblogic
+
+pia_domain_list:
+  "%{hiera('pia_domain_name')}":
+    os_user:               "%{hiera('domain_user')}"
+    ps_cfg_home_dir:       "%{hiera('ps_config_home')}"
+    gateway_user:          "%{hiera('pia_gateway_user')}"
+    gateway_user_pwd:      "%{hiera('pia_gateway_user_pwd')}"
+    auth_token_domain:     ".%{::domain}"
+
+    # custom domain files
+    # Specify source location to copy files from post install
+    # Note: This will recurse and force by default.
+    # If you do not want recurse or force, set the values to false.
+    custom_file_settings:
+      custom_domain_files:
+        ensure:  present
+        source:  "E:/PSoft/dpk/puppet/production/data/files/pia/%{hiera('pia_domain_name')}"
+        path:    "%{hiera('ps_config_home')}/webserv/%{hiera('pia_domain_name')}"
+
+    # weblogic domain settings (weblogic.xml)
+    wl_domain_settings:
+      cookie_name:
+        ensure: present
+        xpath: "/weblogic-web-app/session-descriptor/cookie-name"
+        content:
+          value:  CSPRD-443-PORTAL-PSJSESSIONID
+      invalidation_interval:
+        ensure: present
+        xpath: "/weblogic-web-app/session-descriptor/invalidation-interval-secs"
+        content:
+          value:  '90'
+
+    # weblogic application settings (web.xml)
+    wl_application_settings:
+      remove_psfilter:
+        ensure: absent
+        xpath: "/web-app/filter[filter-name='psfilter']"
+      remove_psfilter_mapping:
+        ensure: absent
+        xpath: "/web-app/filter-mapping[filter-name='psfilter']"
+
+    webserver_settings:
+      webserver_type:           "%{hiera('webserver_type')}"
+      webserver_home:           "%{hiera('weblogic_location')}"
+      webserver_admin_user:     system
+      webserver_admin_user_pwd: password
+      webserver_admin_port:     "%{hiera('pia_http_port')}"
+      webserver_http_port:      "%{hiera('pia_http_port')}"
+      webserver_https_port:     "%{hiera('pia_https_port')}"
+
+    igw_settings:
+      "":
+        ig.version:                  "8.56"
+        ig.isc.serverURL:            "//appserv01.domain.com:5000,//appserv01.domain.com:5100"
+        ig.isc.userid:               "IGUSER"
+        ig.isc.password:             "{V1.1}XXXXXXXXXXXXXXXXXXXX=="
+        ig.isc.toolsRel:             "8.56.10"
+        ig.isc.DomainConnectionPwd:  "{V1.1}XXXXXXXXXXXXXXXXXXXX=="
+
+        ig.isc.PT_LOCAL.serverURL:           "//appserv01.domain.com:5000,//appserv01.domain.com:5100"
+        ig.isc.PT_LOCAL.userid:              "IGUSER"
+        ig.isc.PT_LOCAL.password:            "{V1.1}XXXXXXXXXXXXXXXXXXXX=="
+        ig.isc.PT_LOCAL.toolsRel:            "8.56.10"
+        ig.isc.PT_LOCAL.DomainConnectionPwd: "{V1.1}XXXXXXXXXXXXXXXXXXXX=="
+
+        ig.certificateAlias:                   "certalias"
+        ig.certificatePasswd:                  "{V1.1}XXXXXXXXXXXXXXXXXXXX=="
+        ig.connector.smtptargetconnector.host: "smtp1.domain.com"
+        ig.DefaultServer.LocalNode:            "PT_LOCAL"
+        ig.qas.repositoryHomeDir:              "E:/Temp/QASRepository"
+        secureFileKeystorePath:                "%{hiera('ps_config_home')}/webserv/%{hiera('pia_domain_name')}/piaconfig/keystore/pskey"
+        secureFileKeystorePasswd:              "{V1.1}XXXXXXXXXXXXXXXXXXXX=="
+
+    config_settings:
+      Servers/PIA:
+        ListenAddress:                     0.0.0.0
+        KeyStores:                         CustomIdentityAndCustomTrust
+        CustomIdentityKeyStorePassPhrase:  password
+        CustomTrustKeyStorePassPhrase:     password
+
+      Servers/PIA/SSL/PIA:
+        ServerPrivateKeyAlias:      certalias
+        ServerPrivateKeyPassPhrase: password
+
+      Servers/PIA/WebServer/PIA/WebServerLog/PIA:
+        LoggingEnabled:         true
+        LogFileFormat:          extended
+        BufferSizeKB:           0
+        ELFFields:              'date time cs-method cs-uri sc-status cs-username cs(user-agent) s-ip c-ip cs(X-Forwarded-For) time-taken bytes cs(referrer)'
+
+    site_list:
+      "%{hiera('pia_site_name')}":
+        appserver_connections: "%{hiera('pia_psserver_list')}"
+        domain_conn_pwd:       "%{hiera('domain_conn_pwd')}"
+
+        webprofile_settings:
+          profile_name:        "%{hiera('pia_webprofile_name')}"
+          profile_user:        PTWEBSERVER
+          profile_user_pwd:    password
+
+        report_repository_dir: "%{hiera('report_repository_dir')}"
