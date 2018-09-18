@@ -58,7 +58,7 @@ access_id:         sa1
 access_pwd:        'password'
 change_password:   false
 db_admin_pwd:      admin
-db_connect_id:     'password'
+db_connect_id:     user
 db_connect_pwd:    'password'
 db_host_name:      sqlserv01.domain.com
 db_is_rac:         false
@@ -66,6 +66,8 @@ db_name:           CSPRD
 db_platform:       MSSQL
 db_port:           1521
 db_service_name:   CSPRD
+# Used by DMS to update PSOPRDEFN with user and pwd
+# Note: Requires change_password to be set to true
 db_user:           user
 db_user_pwd:       'password'
 
@@ -105,7 +107,7 @@ appserver_domain_list:
     # Specify source location to copy files from post install
     # All files/folders in source will be copied to location specified in path
     custom_file_settings:
-      custom_domain_files:
+      appserver_domain_files:
         ensure:  present
         source:  "E:/PSoft/dpk/puppet/production/data/files/appserver"
         path:    "%{hiera('ps_config_home')}/appserv"
@@ -184,7 +186,7 @@ prcs_domain_list:
     # Specify source location to copy files from post install
     # All files/folders in source will be copied to location specified in path
     custom_file_settings:
-      custom_domain_files:
+      prcs_domain_files:
         ensure:  present
         source:  "E:/PSoft/dpk/puppet/production/data/files/prcs"
         path:    "%{hiera('ps_config_home')}/appserv"
@@ -272,7 +274,7 @@ pia_domain_list:
     # Note: This will recurse and force by default.
     # If you do not want recurse or force, set the values to false.
     custom_file_settings:
-      custom_domain_files:
+      pia_domain_files:
         ensure:  present
         source:  "E:/PSoft/dpk/puppet/production/data/files/pia/%{hiera('pia_domain_name')}"
         path:    "%{hiera('ps_config_home')}/webserv/%{hiera('pia_domain_name')}"
