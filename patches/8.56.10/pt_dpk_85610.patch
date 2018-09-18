@@ -304,7 +304,7 @@ index 693f506..0754419 100644
      patch_list = resource[:patch_list]
      if ! patch_list.nil?
 diff --git a/pt_deploy/lib/puppet/provider/pt_deploy_weblogic/deploy_weblogic.rb b/pt_deploy/lib/puppet/provider/pt_deploy_weblogic/deploy_weblogic.rb
-index 444322d..aea0ae9 100644
+index 444322d..f875dc7 100644
 --- a/pt_deploy/lib/puppet/provider/pt_deploy_weblogic/deploy_weblogic.rb
 +++ b/pt_deploy/lib/puppet/provider/pt_deploy_weblogic/deploy_weblogic.rb
 @@ -88,7 +88,9 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
@@ -317,7 +317,7 @@ index 444322d..aea0ae9 100644
      weblogic_archive_dir = Dir.mktmpdir(['wl', 'dir'], deploy_parent_location)
      FileUtils.chmod(0755, weblogic_archive_dir)
  
-@@ -260,19 +262,18 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
+@@ -260,22 +262,25 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
  
      if Facter.value(:osfamily) == 'windows'
        cmd_prefix = ''
@@ -338,10 +338,19 @@ index 444322d..aea0ae9 100644
      if FileTest.exist?(deinstall_cmd_path)
 -      deinstall_cmd = "#{cmd_prefix}#{deinstall_cmd_path} -silent -nowait -ignoreSysPrereqs " + \
 -                      "ORACLE_HOME=#{weblogic_home}#{cmd_suffix}"
-+      deinstall_cmd = "#{cmd_prefix}#{wl_env_cmd} && #{cmd_prefix}#{deinstall_cmd_path} -silent -nowait -ignoreSysPrereqs"
-       Puppet.debug("Weblogic deinstall command #{deinstall_cmd}")
+-      Puppet.debug("Weblogic deinstall command #{deinstall_cmd}")
++      # Before uninstalling WebLogic distribution, we must uninstall any OPatch updates or deinstall will fail
++      deinstall_opatch_cmd = "#{cmd_prefix}#{wl_env_cmd} && #{cmd_prefix}#{deinstall_cmd_path} -silent -nowait -ignoreSysPrereqs -distributionName \"OPatch\""
++      deinstall_wl_cmd = "#{cmd_prefix}#{wl_env_cmd} && #{cmd_prefix}#{deinstall_cmd_path} -silent -nowait -ignoreSysPrereqs"
        begin
-         Puppet::Util::Execution.execute(deinstall_cmd, :failonfail => true)
+-        Puppet::Util::Execution.execute(deinstall_cmd, :failonfail => true)
++        Puppet.debug("OPatch deinstalling command #{deinstall_opatch_cmd}")
++        Puppet::Util::Execution.execute(deinstall_opatch_cmd, :failonfail => false)
++        Puppet.debug("Weblogic deinstalling command #{deinstall_wl_cmd}")
++        Puppet::Util::Execution.execute(deinstall_wl_cmd, :failonfail => true)
+         Puppet.debug("Weblogic home #{weblogic_home} deinstalled successfully")
+       rescue Puppet::ExecutionFailure => e
+         raise Puppet::ExecutionFailure, "Weblogic home #{weblogic_home} deinstall failed: #{e.message}"
 diff --git a/pt_deploy/lib/puppet/type/pt_deploy_tuxedo.rb b/pt_deploy/lib/puppet/type/pt_deploy_tuxedo.rb
 index 8c83cbd..9dfe36b 100644
 --- a/pt_deploy/lib/puppet/type/pt_deploy_tuxedo.rb
@@ -397,7 +406,7 @@ index 0000000..22d14e1
 +
 +end
 diff --git a/pt_profile/manifests/pt_appserver.pp b/pt_profile/manifests/pt_appserver.pp
-index 2853202..66cf51d 100644
+index 2853202..15cfa90 100644
 --- a/pt_profile/manifests/pt_appserver.pp
 +++ b/pt_profile/manifests/pt_appserver.pp
 @@ -35,10 +35,8 @@ class pt_profile::pt_appserver {
@@ -413,7 +422,17 @@ index 2853202..66cf51d 100644
    $setup_services     = hiera('setup_services')
    if $setup_services == true {
      if ($::kernel == 'Linux') or ($::kernel == 'DISABLEAIX') {
-@@ -116,7 +114,8 @@ class pt_profile::pt_appserver {
+@@ -81,6 +79,9 @@ class pt_profile::pt_appserver {
+       $env_settings_array = join_keys_to_values($env_settings, '=')
+       notify {"AppServer domain ${domain_name} Env settings: ${env_settings_array}\n":}
+     }
++    else {
++      $env_settings_array = undef
++    }
+     # get the database platform
+     $appserver_db_name = $db_settings['db_name']
+     $db_platform       = $db_settings['db_type']
+@@ -116,7 +117,8 @@ class pt_profile::pt_appserver {
      elsif ($db_platform_upper == 'MSSQL') {
        if $::osfamily != 'windows' {
          fail("${db_platform_upper} database type is not supported for midtier setup on $::osfamily")
@@ -423,7 +442,7 @@ index 2853202..66cf51d 100644
      }
      else {
        fail("Application Server domain setup for DB platform ${db_platform_upper} is not supported")
-@@ -164,6 +163,39 @@ class pt_profile::pt_appserver {
+@@ -164,6 +166,39 @@ class pt_profile::pt_appserver {
        recreate         => $recreate,
        require          => $appserver_require,
      }
@@ -704,7 +723,7 @@ index 59569ea..836cde9 100644
        if ($::kernel == 'Linux') or ($::kernel == 'DISABLEAIX') {
  
 diff --git a/pt_profile/manifests/pt_prcs.pp b/pt_profile/manifests/pt_prcs.pp
-index 4761e43..6b3d161 100644
+index 4761e43..b15c153 100644
 --- a/pt_profile/manifests/pt_prcs.pp
 +++ b/pt_profile/manifests/pt_prcs.pp
 @@ -36,10 +36,7 @@ class pt_profile::pt_prcs {
@@ -719,11 +738,41 @@ index 4761e43..6b3d161 100644
  
    $setup_services     = hiera('setup_services')
    if $setup_services == true {
+@@ -83,6 +80,9 @@ class pt_profile::pt_prcs {
+       $env_settings_array = join_keys_to_values($env_settings, '=')
+       notify {"PRCS domain ${domain_name} Env settings: ${env_settings_array}\n":}
+     }
++    else {
++      $env_settings_array = undef
++    }
+     # get the database platform
+     $prcs_db_name      = $db_settings['db_name']
+     $db_platform       = $db_settings['db_type']
+@@ -119,6 +119,7 @@ class pt_profile::pt_prcs {
+       if $::osfamily != 'windows' {
+         fail("${db_platform_upper} database type is not supported for midtier setup on $::osfamily")
+       }
++      $db_location = undef
+     }
+     else {
+       fail("Process Scheduler domain setup for DB platform ${db_platform_upper} is not supported")
 diff --git a/pt_profile/manifests/pt_psft_environment.pp b/pt_profile/manifests/pt_psft_environment.pp
-index 8774123..328fc5f 100644
+index 8774123..aa4d81e 100644
 --- a/pt_profile/manifests/pt_psft_environment.pp
 +++ b/pt_profile/manifests/pt_psft_environment.pp
-@@ -100,15 +100,8 @@ class pt_profile::pt_psft_environment {
+@@ -86,9 +86,11 @@ class pt_profile::pt_psft_environment {
+       fail("env_type parameter value ${env_type} is not supported for ${pshome_db_type_upper} \
+            database type")
+     }
++    $tns_location = undef
+   }
+   elsif ($pshome_db_type_upper == 'MSSQL') {
+     notice ("Database type is MSSQL, nothing to set for the user environment")
++    $tns_location = undef
+   }
+   else {
+     fail("DB platform ${pshome_db_type_upper} is not supported")
+@@ -100,15 +102,8 @@ class pt_profile::pt_psft_environment {
  
        $pscfg_location     = hiera('ps_config_home')
  
@@ -741,6 +790,37 @@ index 8774123..328fc5f 100644
  
        $cobol_hiera        = hiera('cobol', '')
        if ($cobol_hiera) and ($cobol_hiera != '') {
+diff --git a/pt_profile/manifests/pt_tools_deployment.pp b/pt_profile/manifests/pt_tools_deployment.pp
+index 286f0f2..b247a4e 100644
+--- a/pt_profile/manifests/pt_tools_deployment.pp
++++ b/pt_profile/manifests/pt_tools_deployment.pp
+@@ -62,6 +62,15 @@ class pt_profile::pt_tools_deployment {
+     notice ("Inventory location is  ${inventory_location}")
+ 
+   }
++  else {
++    $inventory_location = undef
++    $oracle_install_group_name = undef
++    $oracle_install_user_name  = undef
++    $oracleclient_location     = undef
++    $oracleclient_remove       = undef
++    $tools_install_group_name  = undef
++    $tools_install_user_name   = undef
++  }
+   $deploy_pshome_only    = hiera('deploy_pshome_only', false)
+ 
+   $pshome_hiera          = hiera('ps_home')
+@@ -141,6 +150,10 @@ class pt_profile::pt_tools_deployment {
+       }
+       notice ("OHS remove is ${ohs_remove}")
+     }
++    else {
++      $ohs_location = undef
++      $ohs_remove = undef
++    }
+   }
+   $redeploy = hiera('redeploy', false)
+   class { '::pt_setup::tools_deployment':
 diff --git a/pt_setup/manifests/tools_deployment.pp b/pt_setup/manifests/tools_deployment.pp
 index 623cc30..9d06ee4 100644
 --- a/pt_setup/manifests/tools_deployment.pp
