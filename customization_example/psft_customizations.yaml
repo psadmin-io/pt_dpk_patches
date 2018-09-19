@@ -23,9 +23,20 @@ tuxedo_location:        "%{hiera('pt_location')}/bea/tuxedo"
 ohs_location:           "%{hiera('pt_location')}/bea/ohs"
 
 
+### Patches ###
+# Note: Order matters so make sure to list pre-req patches first
+tuxedo_patches:
+  28038327: 'E:/PSoft/pt/patches/tuxedo/p28038327_122200_MSWIN-x86-64.zip'
+
+weblogic_patches:
+  28186730: 'E:/PSoft/pt/patches/weblogic/p28186730_139400_Generic.zip'
+  27912627: 'E:/PSoft/pt/patches/weblogic/p27912627_122130_Generic.zip'
+
+  
 ### ACM ###
 
 gateway_node_name:         PT_LOCAL
+
 
 # Set to false if not using
 run_preboot_config_setup:  false
@@ -58,7 +69,7 @@ access_id:         sa1
 access_pwd:        'password'
 change_password:   false
 db_admin_pwd:      admin
-db_connect_id:     user
+db_connect_id:     people
 db_connect_pwd:    'password'
 db_host_name:      sqlserv01.domain.com
 db_is_rac:         false
@@ -114,7 +125,7 @@ appserver_domain_list:
 
     # Windows ONLY - Used to add environment paths to appserver service in registry
     service_registry_settings:
-      app_hcm_service:
+      app_service:
         key:    HKLM\System\CurrentControlSet\Services\PsftAppServerDomain%{hiera('appserver_domain_name')}Service
         value:  Environment
         type:   array
@@ -193,7 +204,7 @@ prcs_domain_list:
 
     # Windows ONLY - Used to add environment paths to prcs service in registry
     service_registry_settings:
-      prcs_cs_service:
+      prcs_service:
         key:    HKLM\System\CurrentControlSet\Services\PsftPrcsDomain%{hiera('prcs_domain_name')}Service
         value:  Environment
         type:   array

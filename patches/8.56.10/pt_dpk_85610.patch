@@ -264,24 +264,29 @@ index 0000000..22d14e1
 +
 +end
 diff --git a/pt_deploy/lib/puppet/provider/deployarchive.rb b/pt_deploy/lib/puppet/provider/deployarchive.rb
-index af026e6..7fe31a5 100644
+index af026e6..4f3e74d 100644
 --- a/pt_deploy/lib/puppet/provider/deployarchive.rb
 +++ b/pt_deploy/lib/puppet/provider/deployarchive.rb
-@@ -88,7 +88,11 @@ class Puppet::Provider::DeployArchive < Puppet::Provider
+@@ -86,9 +86,14 @@ class Puppet::Provider::DeployArchive < Puppet::Provider
+         else
+           Puppet.debug("Failed to remove Read-Only attribute of deploy location #{deploy_location}")
          end
-         remove_cmd = "rmdir /Q /S #{deploy_location}"
-         system(remove_cmd)
+-        remove_cmd = "rmdir /Q /S #{deploy_location}"
+-        system(remove_cmd)
 -        if $? == 0
-+        if File.exist?(deploy_location)
-+          # If folder still exists, try deep remove
-+          system("DeepRemove2 #{deploy_location} 2")
++        system("DeepRemove2 #{deploy_location} >nul 2>&1")
++        if $? != 0
++          # Fallback to standard removal
++          # Note: This will fail to remove deep nested folders
++          remove_cmd = "rmdir /Q /S #{deploy_location}"
++          system(remove_cmd)
 +        end
 +        if !File.exist?(deploy_location)
            Puppet.debug("Deployment location #{deploy_location} removed successfully")
          else
            Puppet.debug("Failed to remove deploy location #{deploy_location}")
 diff --git a/pt_deploy/lib/puppet/provider/pt_deploy_tuxedo/deploy_tuxedo.rb b/pt_deploy/lib/puppet/provider/pt_deploy_tuxedo/deploy_tuxedo.rb
-index 693f506..0754419 100644
+index 693f506..e203314 100644
 --- a/pt_deploy/lib/puppet/provider/pt_deploy_tuxedo/deploy_tuxedo.rb
 +++ b/pt_deploy/lib/puppet/provider/pt_deploy_tuxedo/deploy_tuxedo.rb
 @@ -152,6 +152,18 @@ Puppet::Type.type(:pt_deploy_tuxedo).provide :deploy_tuxedo,
@@ -303,8 +308,64 @@ index 693f506..0754419 100644
      # install tuxedo patches if specified
      patch_list = resource[:patch_list]
      if ! patch_list.nil?
+@@ -165,8 +177,7 @@ Puppet::Type.type(:pt_deploy_tuxedo).provide :deploy_tuxedo,
+         if Facter.value(:osfamily) == 'windows'
+           Puppet.debug("Extracting Tuxedo patch on Windows platform")
+ 
+-          extract_zip_script = generate_windows_unzip_script(patch, tuxedo_patch_dir)
+-          system("powershell -File #{extract_zip_script}")
++          system("cd #{tuxedo_patch_dir} && jar -xvf #{patch}")
+           if $? == 0
+             Puppet.debug("Extraction of Tuxedo patch #{patch} successful")
+           else
+@@ -219,22 +230,29 @@ Puppet::Type.type(:pt_deploy_tuxedo).provide :deploy_tuxedo,
+           tuxedo_opatch_cmd = "#{tuxedo_home}\\OPatch\\opatch.bat"
+ 
+           tuxedo_patch_dir = tuxedo_patch_dir.gsub('/', '\\')
+-          patch_response_file = "#{tuxedo_patch_dir}\\opatch.rsp"
+-
+-          target = open(patch_response_file, 'w')
+-          target.puts("joe@foo.com")
+-          target.puts("")
+-          target.puts("")
+-          target.puts("")
+-          target.close()
+-          File.chmod(0755, patch_response_file)
+-
+-          patch_apply_cmd = "cd #{tuxedo_patch_dir} && #{tuxedo_opatch_cmd} apply #{tuxedo_patch_num} < #{patch_response_file}"
+-          system(patch_apply_cmd)
+-          if $? == 0
+-            Puppet.debug("Tuxedo Patch #{tuxedo_patch_num} install successful")
+-          else
+-            Puppet.debug("Tuxedo Patch #{tuxedo_patch_num} install failed")
++          tuxedo_patch_dir = tuxedo_patch_dir.gsub('/', '\\')
++
++          patch_apply_cmd = "cd #{tuxedo_patch_dir} && #{tuxedo_opatch_cmd} apply #{tuxedo_patch_num} -silent"
++
++          begin
++            Puppet.debug("Tuxedo patch apply command #{patch_apply_cmd}")
++            system("#{patch_apply_cmd}")
++            if $? == 0
++              Puppet.debug("Tuxedo Patch #{tuxedo_patch_num} install successful")
++            else
++              raise Puppet::ExecutionFailure, "Tuxedo patch installation failed: #{patch} failed"
++            end
++          rescue Puppet::ExecutionFailure => e
++            Puppet.debug("Tuxedo patch installation failed: #{e.message}")
++            raise Puppet::Error, "Installation of tuxedo patch #{patch} failed: #{e.message}"
++          ensure
++            system("DeepRemove2 #{tuxedo_patch_dir} >nul 2>&1")
++            if $? != 0
++              # Fallback to standard removal
++              # Note: This will fail to remove deep nested folders
++              remove_cmd = "rmdir /Q /S #{tuxedo_patch_dir}"
++              system(remove_cmd)
++            end
+           end
+           # start the services
+           Puppet.debug("Starting Tuxedo ProcManager service [#{tuxedo_procmgr_service}]")
 diff --git a/pt_deploy/lib/puppet/provider/pt_deploy_weblogic/deploy_weblogic.rb b/pt_deploy/lib/puppet/provider/pt_deploy_weblogic/deploy_weblogic.rb
-index 444322d..f875dc7 100644
+index 444322d..5764510 100644
 --- a/pt_deploy/lib/puppet/provider/pt_deploy_weblogic/deploy_weblogic.rb
 +++ b/pt_deploy/lib/puppet/provider/pt_deploy_weblogic/deploy_weblogic.rb
 @@ -88,7 +88,9 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
@@ -317,7 +378,97 @@ index 444322d..f875dc7 100644
      weblogic_archive_dir = Dir.mktmpdir(['wl', 'dir'], deploy_parent_location)
      FileUtils.chmod(0755, weblogic_archive_dir)
  
-@@ -260,22 +262,25 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
+@@ -203,13 +205,12 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
+         if Facter.value(:osfamily) == 'windows'
+           Puppet.debug("Extracting WebLogic patch on Windows platform")
+ 
+-          #extract_zip_script = generate_windows_unzip_script(patch, weblogic_patch_dir)
+-          #system("powershell -File #{extract_zip_script}")
+-          #if $? == 0
+-          #  Puppet.debug("Extraction of WebLogic patch #{patch} successful")
+-          #else
+-          #  raise Puppet::ExecutionFailure, "Extraction of WebLogic patch #{patch} failed"
+-          #end
++          system("cd #{weblogic_patch_dir} && jar -xvf #{patch}")
++          if $? == 0
++            Puppet.debug("Extraction of WebLogic patch #{patch} successful")
++          else
++            raise Puppet::ExecutionFailure, "Extraction of WebLogic patch #{patch} failed"
++          end
+         else
+           Puppet.debug("Extracting WebLogic patch on Non Windows platform")
+           if Facter.value(:kernel) == 'AIX'
+@@ -224,29 +225,58 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
+           change_ownership(deploy_user, deploy_group, weblogic_patch_dir)
+         end
+         begin
+-          if Facter.value(:osfamily) != 'windows'
+-            Puppet.debug("Installing WebLogic patch #{patch}")
+-            ENV['ORACLE_HOME'] = deploy_location
+-            Puppet.debug('Oracle Home environment variable' + ENV['ORACLE_HOME'])
+-
+-            # get the patch number
+-            weblogic_patch_num = Dir.entries(weblogic_patch_dir).reject {|f| !File.directory?(f) || f.include?('.')}[0]
+-            Puppet.debug('Installing WebLogic patch number ' + weblogic_patch_num)
++          Puppet.debug("Installing WebLogic patch #{patch}")
++          ENV['ORACLE_HOME'] = deploy_location
++          Puppet.debug('Oracle Home environment variable' + ENV['ORACLE_HOME'])
++          # get the patch number
++          weblogic_patch_num = Dir.entries(weblogic_patch_dir).reject {|f| f.include?('.')}[0]
++          Puppet.debug('Installing WebLogic patch number ' + weblogic_patch_num)
++          if Facter.value(:osfamily) == 'windows'
++            patch_dir = "#{weblogic_patch_dir}\\#{weblogic_patch_num}"
++            opatch = Dir.glob("#{patch_dir}/**/opatch*.jar")
++            if opatch.empty?
++              Puppet.debug("Installing Weblogic patch #{weblogic_patch_num} from  #{patch_dir}")
++              patch_apply_cmd = "cd #{patch_dir} && #{deploy_location}\\OPatch\\opatch " + \
++                "apply -oh #{deploy_location} -silent -jdk #{jdk_location} -oop"
++            else
++              Puppet.debug("Installing OPatch patch #{weblogic_patch_num} from  #{patch_dir}")
++              patch_apply_cmd = "java -jar #{patch_dir}\\opatch_generic.jar -silent oracle_home=#{deploy_location}"
++            end
+ 
++            patch_apply_cmd = patch_apply_cmd.gsub('/', '\\')
++            weblogic_patch_dir = weblogic_patch_dir.gsub('/', '\\')
++            Puppet.debug("Weblogic patch apply command #{patch_apply_cmd}")
++            current_user = Puppet::Util::Windows::ADSI::User.current_user_name
++            Puppet.debug("Current user: #{current_user}")
++            system("#{patch_apply_cmd}")
++            if $? != 0
++              raise Puppet::ExecutionFailure, "Weblogic patch installation failed: #{patch} failed"
++            end
++          else
+             patch_dir = "#{weblogic_patch_dir}/#{weblogic_patch_num}"
+             Puppet.debug("Installing Weblogic patch #{weblogic_patch_num} from  #{patch_dir}")
+ 
+             patch_apply_cmd = "#{cmd_prefix} cd #{patch_dir} && #{deploy_location}/OPatch/opatch " + \
+-              " apply -silent -jdk #{jdk_location}#{cmd_suffix}"
++              "apply -oh #{deploy_location} -silent -jdk #{jdk_location}#{cmd_suffix}"
+             Puppet.debug("Weblogic patch apply command #{patch_apply_cmd}")
+             Puppet::Util::Execution.execute(patch_apply_cmd, :failonfail => true)
+-            Puppet.debug('Weblogic patch installation successfully')
+           end
++          Puppet.debug('Weblogic patch installation successfully')
+         rescue Puppet::ExecutionFailure => e
+           Puppet.debug("Weblogic patch installation failed: #{e.message}")
+           raise Puppet::Error, "Installation of weblogic patch #{patch} failed: #{e.message}"
+         ensure
+-          FileUtils.remove_entry(weblogic_patch_dir)
++          if Facter.value(:osfamily) == 'windows'
++            system("DeepRemove2 #{weblogic_patch_dir} >nul 2>&1")
++            if $? != 0
++              # Fallback to standard removal
++              # Note: This will fail to remove deep nested folders
++              remove_cmd = "rmdir /Q /S #{weblogic_patch_dir}"
++              system(remove_cmd)
++            end
++          else
++            FileUtils.remove_entry(weblogic_patch_dir)
++          end
+         end
+       end
+     else
+@@ -260,22 +290,25 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
  
      if Facter.value(:osfamily) == 'windows'
        cmd_prefix = ''
