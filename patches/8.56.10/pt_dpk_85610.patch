@@ -286,7 +286,7 @@ index af026e6..4f3e74d 100644
          else
            Puppet.debug("Failed to remove deploy location #{deploy_location}")
 diff --git a/pt_deploy/lib/puppet/provider/pt_deploy_tuxedo/deploy_tuxedo.rb b/pt_deploy/lib/puppet/provider/pt_deploy_tuxedo/deploy_tuxedo.rb
-index 693f506..e203314 100644
+index 693f506..db1b021 100644
 --- a/pt_deploy/lib/puppet/provider/pt_deploy_tuxedo/deploy_tuxedo.rb
 +++ b/pt_deploy/lib/puppet/provider/pt_deploy_tuxedo/deploy_tuxedo.rb
 @@ -152,6 +152,18 @@ Puppet::Type.type(:pt_deploy_tuxedo).provide :deploy_tuxedo,
@@ -308,13 +308,15 @@ index 693f506..e203314 100644
      # install tuxedo patches if specified
      patch_list = resource[:patch_list]
      if ! patch_list.nil?
-@@ -165,8 +177,7 @@ Puppet::Type.type(:pt_deploy_tuxedo).provide :deploy_tuxedo,
+@@ -164,9 +176,8 @@ Puppet::Type.type(:pt_deploy_tuxedo).provide :deploy_tuxedo,
+ 
          if Facter.value(:osfamily) == 'windows'
            Puppet.debug("Extracting Tuxedo patch on Windows platform")
- 
+-
 -          extract_zip_script = generate_windows_unzip_script(patch, tuxedo_patch_dir)
 -          system("powershell -File #{extract_zip_script}")
-+          system("cd #{tuxedo_patch_dir} && jar -xvf #{patch}")
++          ENV['JAVA_HOME'] = jdk_location
++          system("cd #{tuxedo_patch_dir} && #{jdk_location}\\bin\\jar -xvf #{patch}")
            if $? == 0
              Puppet.debug("Extraction of Tuxedo patch #{patch} successful")
            else
@@ -364,8 +366,16 @@ index 693f506..e203314 100644
            end
            # start the services
            Puppet.debug("Starting Tuxedo ProcManager service [#{tuxedo_procmgr_service}]")
+@@ -424,6 +442,7 @@ Puppet::Type.type(:pt_deploy_tuxedo).provide :deploy_tuxedo,
+         # remove the registry entry if present
+         system("REG DELETE HKEY_LOCAL_MACHINE\\SOFTWARE\\ORACLE\\KEY_#{oracle_home_name} /f >NUL 2>&1")
+         system("REG DELETE HKEY_LOCAL_MACHINE\\SOFTWARE\\ORACLE\\TUXEDO\\12.2.2.0.0_VS2015 /f >NUL 2>&1")
++        system("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\ORACLE\\SALT\\12.2.2.0.0\\for Tuxedo 12.2.2.0.0\" /f >NUL 2>&1")
+ 
+         # remove services if present
+         remove_tuxedo_services()
 diff --git a/pt_deploy/lib/puppet/provider/pt_deploy_weblogic/deploy_weblogic.rb b/pt_deploy/lib/puppet/provider/pt_deploy_weblogic/deploy_weblogic.rb
-index 444322d..5764510 100644
+index 444322d..e0c9fd8 100644
 --- a/pt_deploy/lib/puppet/provider/pt_deploy_weblogic/deploy_weblogic.rb
 +++ b/pt_deploy/lib/puppet/provider/pt_deploy_weblogic/deploy_weblogic.rb
 @@ -88,7 +88,9 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
@@ -378,10 +388,11 @@ index 444322d..5764510 100644
      weblogic_archive_dir = Dir.mktmpdir(['wl', 'dir'], deploy_parent_location)
      FileUtils.chmod(0755, weblogic_archive_dir)
  
-@@ -203,13 +205,12 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
+@@ -202,14 +204,13 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
+ 
          if Facter.value(:osfamily) == 'windows'
            Puppet.debug("Extracting WebLogic patch on Windows platform")
- 
+-
 -          #extract_zip_script = generate_windows_unzip_script(patch, weblogic_patch_dir)
 -          #system("powershell -File #{extract_zip_script}")
 -          #if $? == 0
@@ -389,7 +400,8 @@ index 444322d..5764510 100644
 -          #else
 -          #  raise Puppet::ExecutionFailure, "Extraction of WebLogic patch #{patch} failed"
 -          #end
-+          system("cd #{weblogic_patch_dir} && jar -xvf #{patch}")
++          ENV['JAVA_HOME'] = jdk_location
++          system("cd #{weblogic_patch_dir} && #{jdk_location}\\bin\\jar -xvf #{patch}")
 +          if $? == 0
 +            Puppet.debug("Extraction of WebLogic patch #{patch} successful")
 +          else
@@ -398,7 +410,7 @@ index 444322d..5764510 100644
          else
            Puppet.debug("Extracting WebLogic patch on Non Windows platform")
            if Facter.value(:kernel) == 'AIX'
-@@ -224,29 +225,58 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
+@@ -224,29 +225,62 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
            change_ownership(deploy_user, deploy_group, weblogic_patch_dir)
          end
          begin
@@ -416,9 +428,9 @@ index 444322d..5764510 100644
 +          # get the patch number
 +          weblogic_patch_num = Dir.entries(weblogic_patch_dir).reject {|f| f.include?('.')}[0]
 +          Puppet.debug('Installing WebLogic patch number ' + weblogic_patch_num)
++          patch_dir = "#{weblogic_patch_dir}/#{weblogic_patch_num}"
++          opatch = Dir.glob("#{patch_dir}/**/opatch*.jar")
 +          if Facter.value(:osfamily) == 'windows'
-+            patch_dir = "#{weblogic_patch_dir}\\#{weblogic_patch_num}"
-+            opatch = Dir.glob("#{patch_dir}/**/opatch*.jar")
 +            if opatch.empty?
 +              Puppet.debug("Installing Weblogic patch #{weblogic_patch_num} from  #{patch_dir}")
 +              patch_apply_cmd = "cd #{patch_dir} && #{deploy_location}\\OPatch\\opatch " + \
@@ -428,6 +440,8 @@ index 444322d..5764510 100644
 +              patch_apply_cmd = "java -jar #{patch_dir}\\opatch_generic.jar -silent oracle_home=#{deploy_location}"
 +            end
  
+-            patch_dir = "#{weblogic_patch_dir}/#{weblogic_patch_num}"
+-            Puppet.debug("Installing Weblogic patch #{weblogic_patch_num} from  #{patch_dir}")
 +            patch_apply_cmd = patch_apply_cmd.gsub('/', '\\')
 +            weblogic_patch_dir = weblogic_patch_dir.gsub('/', '\\')
 +            Puppet.debug("Weblogic patch apply command #{patch_apply_cmd}")
@@ -438,12 +452,17 @@ index 444322d..5764510 100644
 +              raise Puppet::ExecutionFailure, "Weblogic patch installation failed: #{patch} failed"
 +            end
 +          else
-             patch_dir = "#{weblogic_patch_dir}/#{weblogic_patch_num}"
-             Puppet.debug("Installing Weblogic patch #{weblogic_patch_num} from  #{patch_dir}")
++            if opatch.empty?
++              Puppet.debug("Installing Weblogic patch #{weblogic_patch_num} from  #{patch_dir}")
++              patch_apply_cmd = "#{cmd_prefix} cd #{patch_dir} && #{deploy_location}/OPatch/opatch " + \
++                "apply -oh #{deploy_location} -silent -jdk #{jdk_location}#{cmd_suffix}"
++            else
++              Puppet.debug("Installing OPatch patch #{weblogic_patch_num} from  #{patch_dir}")
++              patch_apply_cmd = "java -jar #{patch_dir}/opatch_generic.jar -silent oracle_home=#{deploy_location}"
++            end
  
-             patch_apply_cmd = "#{cmd_prefix} cd #{patch_dir} && #{deploy_location}/OPatch/opatch " + \
+-            patch_apply_cmd = "#{cmd_prefix} cd #{patch_dir} && #{deploy_location}/OPatch/opatch " + \
 -              " apply -silent -jdk #{jdk_location}#{cmd_suffix}"
-+              "apply -oh #{deploy_location} -silent -jdk #{jdk_location}#{cmd_suffix}"
              Puppet.debug("Weblogic patch apply command #{patch_apply_cmd}")
              Puppet::Util::Execution.execute(patch_apply_cmd, :failonfail => true)
 -            Puppet.debug('Weblogic patch installation successfully')
@@ -468,7 +487,7 @@ index 444322d..5764510 100644
          end
        end
      else
-@@ -260,22 +290,25 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
+@@ -260,22 +294,25 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
  
      if Facter.value(:osfamily) == 'windows'
        cmd_prefix = ''
@@ -973,7 +992,7 @@ index 286f0f2..b247a4e 100644
    $redeploy = hiera('redeploy', false)
    class { '::pt_setup::tools_deployment':
 diff --git a/pt_setup/manifests/tools_deployment.pp b/pt_setup/manifests/tools_deployment.pp
-index 623cc30..9d06ee4 100644
+index 623cc30..d27d3ec 100644
 --- a/pt_setup/manifests/tools_deployment.pp
 +++ b/pt_setup/manifests/tools_deployment.pp
 @@ -51,6 +51,15 @@ class pt_setup::tools_deployment (
@@ -1036,14 +1055,14 @@ index 623cc30..9d06ee4 100644
 +            ],
 +          }
 +        }
-+      }
        }
- 	  
+-	  
 -      $weblogic_patches = hiera('weblogic_patches', '')
 -      if ($weblogic_patches) and ($weblogic_patches != '') {
 -        notice ("Weblogic patches exists")
 -        $weblogic_patches_list = values($weblogic_patches)
--      }
+       }
++
 +      if $domain_type == 'all' or $domain_type == 'pia' {
 +        $weblogic_ensure = $ensure
 +        $weblogic_patches = hiera('weblogic_patches', '')
@@ -1130,10 +1149,3 @@ index 623cc30..9d06ee4 100644
        }
        if $ohs_location {
          $deploy_ohs = true
-@@ -533,4 +613,4 @@ class pt_setup::tools_deployment (
-         require => Pt_deploy_pshome[$pshome_tag],
-       }
-     }
--  }
-+  }
-\ No newline at end of file

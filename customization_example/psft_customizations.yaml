@@ -77,8 +77,11 @@ db_name:           CSPRD
 db_platform:       MSSQL
 db_port:           1521
 db_service_name:   CSPRD
-# Used by DMS to update PSOPRDEFN with user and pwd
-# Note: Requires change_password to be set to true
+# Used by the following: 
+# 1. AppServer/Process Scheduler to connect to DB on startup
+#    Populates the following fields in app/prcs configs:  UserId, UserPswd
+# 2. DMS to update PSOPRDEFN with user and pwd
+#    Note: Requires change_password to be set to true
 db_user:           user
 db_user_pwd:       'password'
 
