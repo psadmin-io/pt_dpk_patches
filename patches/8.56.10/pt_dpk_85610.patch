@@ -1,3 +1,87 @@
+diff --git a/pt_config/files/pt_appserver/appserver_win_service.rb.erb b/pt_config/files/pt_appserver/appserver_win_service.rb.erb
+index 8d29c2f..f1b98fa 100644
+--- a/pt_config/files/pt_appserver/appserver_win_service.rb.erb
++++ b/pt_config/files/pt_appserver/appserver_win_service.rb.erb
+@@ -1,4 +1,4 @@
+-LOG_FILE = "<%= ps_cfg_home %>/appserv/<%= domain_name %>/appserver_win_service.log"
++LOG_FILE = "<%= ps_cfg_home.gsub('\\', '/') %>/appserv/<%= domain_name %>/appserver_win_service.log"
+ begin
+ 
+   require 'rubygems'
+@@ -15,7 +15,7 @@ begin
+     end
+ 
+     def service_main(*args)
+-      system("<%= ps_home %>/appserv/psadmin -c start -d <%= domain_name %>")
++      system("<%= ps_home.gsub('\\', '/') %>/appserv/psadmin -c start -d <%= domain_name %>")
+ 
+        # While we're in here the daemon is running.
+        while running?
+@@ -31,7 +31,7 @@ begin
+      def service_stop
+        msg = 'Received stop signal at: ' + Time.now.to_s
+        File.open(LOG_FILE, 'a'){ |f| f.puts msg }
+-       system("<%= ps_home %>/appserv/psadmin -c stop -d <%= domain_name %>")
++       system("<%= ps_home.gsub('\\', '/') %>/appserv/psadmin -c stop -d <%= domain_name %>")
+      end
+ 
+      # This event triggers when the service receives a signal to pause.
+diff --git a/pt_config/files/pt_pia/pia_win_service.rb.erb b/pt_config/files/pt_pia/pia_win_service.rb.erb
+index 5dee9c4..d3665c8 100644
+--- a/pt_config/files/pt_pia/pia_win_service.rb.erb
++++ b/pt_config/files/pt_pia/pia_win_service.rb.erb
+@@ -1,4 +1,4 @@
+-LOG_FILE = "<%= ps_cfg_home %>/webserv/<%= domain_name %>/pia_win_service.log"
++LOG_FILE = "<%= ps_cfg_home.gsub('\\', '/') %>/webserv/<%= domain_name %>/pia_win_service.log"
+ begin
+ 
+   require 'rubygems'
+@@ -15,7 +15,7 @@ begin
+     end
+ 
+     def service_main(*args)
+-      system("<%= ps_cfg_home %>/webserv/<%= domain_name %>/bin/startPIA.cmd")
++      system("<%= ps_cfg_home.gsub('\\', '/') %>/webserv/<%= domain_name %>/bin/startPIA.cmd")
+ 
+        # While we're in here the daemon is running.
+        while running?
+@@ -31,7 +31,7 @@ begin
+      def service_stop
+        msg = 'Received stop signal at: ' + Time.now.to_s
+        File.open(LOG_FILE, 'a'){ |f| f.puts msg }
+-       system("<%= ps_cfg_home %>/webserv/<%= domain_name %>/bin/stopPIA.cmd")
++       system("<%= ps_cfg_home.gsub('\\', '/') %>/webserv/<%= domain_name %>/bin/stopPIA.cmd")
+      end
+ 
+      # This event triggers when the service receives a signal to pause.
+diff --git a/pt_config/files/pt_prcs/prcs_win_service.rb.erb b/pt_config/files/pt_prcs/prcs_win_service.rb.erb
+index 30e87e2..6a20f5e 100644
+--- a/pt_config/files/pt_prcs/prcs_win_service.rb.erb
++++ b/pt_config/files/pt_prcs/prcs_win_service.rb.erb
+@@ -1,4 +1,4 @@
+-LOG_FILE = "<%= ps_cfg_home %>/appserv/prcs/<%= domain_name %>/prcs_win_service.log"
++LOG_FILE = "<%= ps_cfg_home.gsub('\\', '/') %>/appserv/prcs/<%= domain_name %>/prcs_win_service.log"
+ begin
+ 
+   require 'rubygems'
+@@ -15,7 +15,7 @@ begin
+     end
+ 
+     def service_main(*args)
+-      system("<%= ps_home %>/appserv/psadmin -p start -d <%= domain_name %>")
++      system("<%= ps_home.gsub('\\', '/') %>/appserv/psadmin -p start -d <%= domain_name %>")
+ 
+        # While we're in here the daemon is running.
+        while running?
+@@ -31,7 +31,7 @@ begin
+      def service_stop
+        msg = 'Received stop signal at: ' + Time.now.to_s
+        File.open(LOG_FILE, 'a'){ |f| f.puts msg }
+-       system("<%= ps_home %>/appserv/psadmin -p stop -d <%= domain_name %>")
++       system("<%= ps_home.gsub('\\', '/') %>/appserv/psadmin -p stop -d <%= domain_name %>")
+      end
+ 
+      # This event triggers when the service receives a signal to pause.
 diff --git a/pt_config/lib/pt_comp_utils/webserver.rb b/pt_config/lib/pt_comp_utils/webserver.rb
 index aae8a2c..c89648e 100644
 --- a/pt_config/lib/pt_comp_utils/webserver.rb
@@ -375,7 +459,7 @@ index 693f506..db1b021 100644
          # remove services if present
          remove_tuxedo_services()
 diff --git a/pt_deploy/lib/puppet/provider/pt_deploy_weblogic/deploy_weblogic.rb b/pt_deploy/lib/puppet/provider/pt_deploy_weblogic/deploy_weblogic.rb
-index 444322d..e0c9fd8 100644
+index 444322d..2d05088 100644
 --- a/pt_deploy/lib/puppet/provider/pt_deploy_weblogic/deploy_weblogic.rb
 +++ b/pt_deploy/lib/puppet/provider/pt_deploy_weblogic/deploy_weblogic.rb
 @@ -88,7 +88,9 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
@@ -410,7 +494,7 @@ index 444322d..e0c9fd8 100644
          else
            Puppet.debug("Extracting WebLogic patch on Non Windows platform")
            if Facter.value(:kernel) == 'AIX'
-@@ -224,29 +225,62 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
+@@ -224,29 +225,60 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
            change_ownership(deploy_user, deploy_group, weblogic_patch_dir)
          end
          begin
@@ -445,8 +529,6 @@ index 444322d..e0c9fd8 100644
 +            patch_apply_cmd = patch_apply_cmd.gsub('/', '\\')
 +            weblogic_patch_dir = weblogic_patch_dir.gsub('/', '\\')
 +            Puppet.debug("Weblogic patch apply command #{patch_apply_cmd}")
-+            current_user = Puppet::Util::Windows::ADSI::User.current_user_name
-+            Puppet.debug("Current user: #{current_user}")
 +            system("#{patch_apply_cmd}")
 +            if $? != 0
 +              raise Puppet::ExecutionFailure, "Weblogic patch installation failed: #{patch} failed"
@@ -487,7 +569,7 @@ index 444322d..e0c9fd8 100644
          end
        end
      else
-@@ -260,22 +294,25 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
+@@ -260,22 +292,25 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
  
      if Facter.value(:osfamily) == 'windows'
        cmd_prefix = ''
