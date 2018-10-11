@@ -657,6 +657,63 @@ index 0000000..22d14e1
 +  desc "The service user."
 +
 +end
+diff --git a/pt_profile/manifests/pt_app_deployment.pp b/pt_profile/manifests/pt_app_deployment.pp
+index 18364ef..9fb36d8 100644
+--- a/pt_profile/manifests/pt_app_deployment.pp
++++ b/pt_profile/manifests/pt_app_deployment.pp
+@@ -23,6 +23,7 @@ class pt_profile::pt_app_deployment {
+ 
+   # Hiera lookups
+   $ensure                   = hiera('ensure')
++  $remove_default            = $ensure ? { 'present' => false, default => true }
+   if !($ensure in [ 'present', 'absent']) {
+     fail("Invalid value for 'ensure'. It needs to be either 'present' or 'absent'.")
+   }
+@@ -56,13 +57,7 @@ class pt_profile::pt_app_deployment {
+   $ps_apphome_location = $ps_apphome_hiera['location']
+   notice ("PS App Home location is ${ps_apphome_location}")
+ 
+-  $ps_apphome_remove_value    = $ps_apphome_hiera['remove']
+-  if $ps_apphome_remove_value == undef {
+-    $ps_apphome_remove = true
+-  }
+-  else {
+-    $ps_apphome_remove = str2bool($ps_apphome_remove_value)
+-  }
++  $ps_apphome_remove   = any2bool(pick($ps_apphome_hiera['remove'], $remove_default))
+   notice ("PS App Home remove flag ${ps_apphome_remove}")
+ 
+   if $deploy_apphome_only == false {
+@@ -75,13 +70,7 @@ class pt_profile::pt_app_deployment {
+       $pi_home_location     = $pi_home_hiera['location']
+       notice ("PS App PI Home location is ${pi_home_location}")
+ 
+-      $pi_home_remove_value = $pi_home_hiera['remove']
+-      if $pi_home_remove_value == undef {
+-        $pi_home_remove     = true
+-      }
+-      else {
+-        $pi_home_remove     = str2bool($pi_home_remove_value)
+-      }
++      $pi_home_remove       = any2bool(pick($pi_home_hiera['remove'], $remove_default))
+     }
+     else {
+       $pi_home_remove = true
+@@ -93,13 +82,7 @@ class pt_profile::pt_app_deployment {
+       $ps_custhome_location = $ps_custhome_hiera['location']
+       notice ("PS Cust Home location is ${ps_custhome_location}")
+ 
+-      $ps_custhome_remove_value = $ps_custhome_hiera['remove']
+-      if $ps_custhome_remove_value == undef {
+-        $ps_custhome_remove = true
+-      }
+-      else {
+-        $ps_custhome_remove = str2bool($ps_custhome_remove_value)
+-      }
++      $ps_custhome_remove = any2bool(pick($ps_custhome_hiera['remove'], $remove_default))
+     }
+     else {
+       $ps_custhome_remove = true
 diff --git a/pt_profile/manifests/pt_appserver.pp b/pt_profile/manifests/pt_appserver.pp
 index 2853202..15cfa90 100644
 --- a/pt_profile/manifests/pt_appserver.pp
@@ -835,6 +892,33 @@ index 9d25265..261b86a 100644
          webserver_settings => $webserver_settings_array,
        }
      }
+diff --git a/pt_profile/manifests/pt_oracleserver.pp b/pt_profile/manifests/pt_oracleserver.pp
+index 2bb8ec5..56f17b0 100644
+--- a/pt_profile/manifests/pt_oracleserver.pp
++++ b/pt_profile/manifests/pt_oracleserver.pp
+@@ -23,6 +23,7 @@ class pt_profile::pt_oracleserver {
+ 
+   # Hiera lookups
+   $ensure                      = hiera('ensure')
++  $remove_default              = $ensure ? { 'present' => false, default => true }
+   if !($ensure in [ 'present', 'absent']) {
+     fail("Invalid value for 'ensure'. It needs to be either 'present' or 'absent'.")
+   }
+@@ -65,13 +66,7 @@ class pt_profile::pt_oracleserver {
+   $oracleserver_location = $oracleserver_hiera['location']
+   $oracleserver_listener_port = $oracleserver_hiera['listener_port']
+   $oracleserver_listener_name = $oracleserver_hiera['listener_name']
+-  $oracleserver_remove        = $oracleserver_hiera['remove']
+-  if $oracleserver_remove == undef {
+-    $remove = true
+-  }
+-  else {
+-    $remove = str2bool($oracleserver_remove)
+-  }
++  $oracleserver_remove        = any2bool(pick($oracleserver_hiera['remove'], $remove_default))
+ 
+   if $ensure == present {
+     $db_location = hiera('db_location')
 diff --git a/pt_profile/manifests/pt_pia.pp b/pt_profile/manifests/pt_pia.pp
 index 59569ea..836cde9 100644
 --- a/pt_profile/manifests/pt_pia.pp
@@ -1043,10 +1127,18 @@ index 8774123..aa4d81e 100644
        $cobol_hiera        = hiera('cobol', '')
        if ($cobol_hiera) and ($cobol_hiera != '') {
 diff --git a/pt_profile/manifests/pt_tools_deployment.pp b/pt_profile/manifests/pt_tools_deployment.pp
-index 286f0f2..b247a4e 100644
+index 286f0f2..c61c9fa 100644
 --- a/pt_profile/manifests/pt_tools_deployment.pp
 +++ b/pt_profile/manifests/pt_tools_deployment.pp
-@@ -62,6 +62,15 @@ class pt_profile::pt_tools_deployment {
+@@ -23,6 +23,7 @@ class pt_profile::pt_tools_deployment {
+ 
+   ## Hiera lookups
+   $ensure                    = hiera('ensure')
++  $remove_default            = $ensure ? { 'present' => false, default => true }
+   if !($ensure in [ 'present', 'absent']) {
+     fail("Invalid value for 'ensure'. It needs to be either 'present' or 'absent'.")
+   }
+@@ -62,6 +63,15 @@ class pt_profile::pt_tools_deployment {
      notice ("Inventory location is  ${inventory_location}")
  
    }
@@ -1062,8 +1154,85 @@ index 286f0f2..b247a4e 100644
    $deploy_pshome_only    = hiera('deploy_pshome_only', false)
  
    $pshome_hiera          = hiera('ps_home')
-@@ -141,6 +150,10 @@ class pt_profile::pt_tools_deployment {
+@@ -69,13 +79,7 @@ class pt_profile::pt_tools_deployment {
+   $pshome_location       = $pshome_hiera['location']
+   notice ("PS Home location is  ${pshome_location}")
+ 
+-  $pshome_remove_value  = $pshome_hiera['remove']
+-  if $pshome_remove_value == undef {
+-    $pshome_remove        = true
+-  }
+-  else {
+-  $pshome_remove        = str2bool($pshome_remove_value)
+-  }
++  $pshome_remove         = any2bool(pick($pshome_hiera['remove'], $remove_default))
+   notice ("PS Home remove is ${pshome_remove}")
+ 
+   if $deploy_pshome_only == false {
+@@ -84,63 +88,36 @@ class pt_profile::pt_tools_deployment {
+       if $db_platform == 'ORACLE' {
+         $oracleclient_hiera    = hiera('oracle_client')
+         $oracleclient_location = $oracleclient_hiera['location']
+-
+-        $oracleclient_remove_value  = $oracleclient_hiera['remove']
+-        if $oracleclient_remove_value == undef {
+-          $oracleclient_remove = true
+-        }
+-        else {
+-          $oracleclient_remove = str2bool($oracleclient_remove_value)
+-        }
++        $oracleclient_remove   = any2bool(pick($oracleclient_hiera['remove'], $remove_default))
+         notice ("Oracle client remove is ${oracleclient_remove}")
        }
+     }
+     $jdk_hiera             = hiera('jdk')
+     $jdk_location          = $jdk_hiera['location']
+-    $jdk_remove_value      = $jdk_hiera['remove']
+-    if $jdk_remove_value == undef {
+-      $jdk_remove        = true
+-    }
+-    else {
+-    $jdk_remove            = str2bool($jdk_remove_value)
+-    }
++    $jdk_remove            = any2bool(pick($jdk_hiera['remove'], $remove_default))
+     notice ("JDK remove is ${jdk_remove}")
+ 
+     $weblogic_hiera        = hiera('weblogic')
+     $weblogic_location     = $weblogic_hiera['location']
+-    $weblogic_remove_value = $weblogic_hiera['remove']
+-    if $weblogic_remove_value == undef {
+-      $weblogic_remove        = true
+-    }
+-    else {
+-    $weblogic_remove       = str2bool($weblogic_remove_value)
+-    }
++    $weblogic_remove       = any2bool(pick($weblogic_hiera['remove'], $remove_default))
+     notice ("Weblogic remove is ${weblogic_remove}")
+ 
+     $tuxedo_hiera          = hiera('tuxedo')
+     $tuxedo_location       = $tuxedo_hiera['location']
+-    $tuxedo_remove_value   = $tuxedo_hiera['remove']
+-    if $tuxedo_remove_value == undef {
+-      $tuxedo_remove        = true
+-    }
+-    else {
+-    $tuxedo_remove         = str2bool($tuxedo_remove_value)
+-    }
++    $tuxedo_remove         = any2bool(pick($tuxedo_hiera['remove'], $remove_default))
+     notice ("Tuxedo remove is ${tuxedo_remove}")
+ 
+     $ohs_hiera             = hiera('setup_ohs', false)
+     if $ohs_hiera == true  {
+       $ohs_comp_hiera      = hiera('ohs')
+       $ohs_location        = $ohs_comp_hiera['location']
+-      $ohs_remove_value    = $ohs_comp_hiera['remove']
+-      if $ohs_remove_value == undef {
+-        $ohs_remove        = true
+-      }
+-      else {
+-      $ohs_remove          = str2bool($ohs_remove_value)
+-      }
++      $ohs_remove          = any2bool(pick($ohs_comp_hiera['remove'], $remove_default))
        notice ("OHS remove is ${ohs_remove}")
      }
 +    else {
