@@ -5,16 +5,18 @@ This repository contains fixes and enhancements to Oracle's PeopleSoft DPK.
 ### Windows
 1. puppet-agent - [5.5.6+](http://downloads.puppetlabs.com/windows/puppet/)  
 2. puppet module - [acl](https://forge.puppet.com/puppetlabs/acl)  
- `puppet module install puppetlabs-acl --version 2.0.1`
+ `puppet module install puppetlabs-acl --version 2.0.1 --confdir [dir]`
 3. puppet module - [inifile](https://forge.puppet.com/puppetlabs/inifile)  
-`puppet module install puppetlabs-inifile --version 2.3.0`
+`puppet module install puppetlabs-inifile --version 2.3.0 --confdir [dir]`
 4. puppet module - [registry](https://forge.puppet.com/puppetlabs/registry)  
-`puppet module install puppetlabs-registry --version 2.0.2`
+`puppet module install puppetlabs-registry --version 2.0.2 --confdir [dir]`
 5. puppet module - [xml_fragment](https://forge.puppet.com/ianoberst/xml_fragment)  
-`puppet module install ianoberst-xml_fragment --version 1.0.2`
-6. [DeepRemove2](https://github.com/juanpablojofre/deepremove) - Used to delete weblogic/tuxedo folders that exceed the max path limit of windows.
-7. Set `JAVA_HOME` in system environment variables.
-8. If using custom service accounts, each service account must be granted rights to logon as service or the service will fail to start.
+`puppet module install ianoberst-xml_fragment --version 1.0.2 --confdir [dir]`
+6. puppet module - [stdlib 4.11+] (https://forge.puppet.com/puppetlabs/stdlib)
+`puppet module upgrade puppetlabs-stdlib --confdir [dir]`
+7. [DeepRemove2](https://github.com/juanpablojofre/deepremove) - Used to delete weblogic/tuxedo folders that exceed the max path limit of windows.
+8. Set `JAVA_HOME` in system environment variables.
+9. If using custom service accounts, each service account must be granted rights to logon as service or the service will fail to start.
 
 ## Features  
 

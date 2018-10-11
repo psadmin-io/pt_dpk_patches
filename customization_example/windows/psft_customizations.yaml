@@ -2,35 +2,35 @@
 
 ### Deployment ###
 
-peoplesoft_base:  E:/PSoft
+peoplesoft_base:  'E:\PSoft'
 
-dpk_location:     E:/PSoft/dpk
-archive_location: "%{hiera('dpk_location')}/archives"
-pt_location:      "%{hiera('peoplesoft_base')}/pt"
-db_location:      "%{hiera('peoplesoft_base')}/db"
+dpk_location:     'E:\PSoft\dpk'
+archive_location: "%{hiera('dpk_location')}\\archives"
+pt_location:      "%{hiera('peoplesoft_base')}\\pt"
+db_location:      "%{hiera('peoplesoft_base')}\\db"
 db_platform:      MSSQL
 setup_ohs:        false
 unicode_db:       false
 db_type:          DEMO
 install_type:     FRESH
 
-ps_home_location:       "%{hiera('pt_location')}/ps_home8.56.10"
-inventory_location:     "%{hiera('db_location')}/oraInventory"
-oracle_client_location: "%{hiera('pt_location')}/oracle-client/12.1.0.2"
-jdk_location:           "%{hiera('pt_location')}/jdk1.8.0_171"
-weblogic_location:      "%{hiera('pt_location')}/bea"
-tuxedo_location:        "%{hiera('pt_location')}/bea/tuxedo"
-ohs_location:           "%{hiera('pt_location')}/bea/ohs"
+ps_home_location:       "%{hiera('pt_location')}\\ps_home8.56.10"
+inventory_location:     "%{hiera('db_location')}\\oraInventory"
+oracle_client_location: "%{hiera('pt_location')}\\oracle-client\\12.1.0.2"
+jdk_location:           "%{hiera('pt_location')}\\jdk1.8.0_171"
+weblogic_location:      "%{hiera('pt_location')}\\bea"
+tuxedo_location:        "%{hiera('pt_location')}\\bea\\tuxedo"
+ohs_location:           "%{hiera('pt_location')}\\bea\\ohs"
 
 
 ### Patches ###
 # Note: Order matters so make sure to list pre-req patches first
 tuxedo_patches:
-  28038327: 'E:/PSoft/pt/patches/tuxedo/p28038327_122200_MSWIN-x86-64.zip'
+  28038327: 'E:\PSoft\pt\patches\tuxedo\p28038327_122200_MSWIN-x86-64.zip'
 
 weblogic_patches:
-  28186730: 'E:/PSoft/pt/patches/weblogic/p28186730_139400_Generic.zip'
-  27912627: 'E:/PSoft/pt/patches/weblogic/p27912627_122130_Generic.zip'
+  28186730: 'E:\PSoft\pt\patches\weblogic\p28186730_139400_Generic.zip'
+  27912627: 'E:\PSoft\pt\patches\weblogic\p27912627_122130_Generic.zip'
 
   
 ### ACM ###
@@ -57,10 +57,10 @@ help_uri:              pt856pbr2
 
 ### PS Homes ###
 
-ps_app_home:           "E:/PSoft/pt/ps_home8.56.10"
-ps_config_home:        "E:/PSoft/pt/ps_cfg_home/cs"
-ps_cust_home:          "E:/PSHomes/cust_home/prd/cs"
-tuxedo_home:           "E:/PSoft/pt/bea/tuxedo/tuxedo12.2.2.0.0_VS2015"
+ps_app_home:           'E:\PSoft\pt\ps_home8.56.10'
+ps_config_home:        'E:\PSoft\pt\ps_cfg_home\cs'
+ps_cust_home:          'E:\PSHomes\cust_home\prd\cs'
+tuxedo_home:           'E:\PSoft\pt\bea\tuxedo\tuxedo12.2.2.0.0_VS2015'
 
 
 ### Database ###
@@ -123,12 +123,12 @@ appserver_domain_list:
     custom_file_settings:
       appserver_domain_files:
         ensure:  present
-        source:  "E:/PSoft/dpk/puppet/production/data/files/appserver"
-        path:    "%{hiera('ps_config_home')}/appserv"
+        source:  'E:\PSoft\dpk\puppet\production\data\files\appserver'
+        path:    "%{hiera('ps_config_home')}\\appserv"
 
     # Windows ONLY - Used to add environment paths to appserver service in registry
     service_registry_settings:
-      app_service:
+      app_cs_service:
         key:    HKLM\System\CurrentControlSet\Services\PsftAppServerDomain%{hiera('appserver_domain_name')}Service
         value:  Environment
         type:   array
@@ -138,7 +138,7 @@ appserver_domain_list:
           - PS_CUST_HOME=%{lookup('ps_cust_home')}
           - PS_HOME=%{lookup('ps_home_location')}
           - TUXDIR=%{lookup('tuxedo_home')}
-          - PS_FILEDIR=%{lookup('ps_config_home')}/appserv/prcs/%{hiera('appserver_domain_name')}/files/PS_UPLOADS
+          - PS_FILEDIR=%{lookup('ps_config_home')}\appserv\prcs\%{hiera('appserver_domain_name')}\files\PS_UPLOADS
 
     db_settings:
       db_name:        "%{hiera('db_name')}"
@@ -157,9 +157,9 @@ appserver_domain_list:
       SMTP Settings/SMTPPort1:         25
       SMTP Settings/SMTPSender:        "%{hiera('appserver_domain_name')}@domain.com"
       SMTP Settings/SMTPSourceMachine: "%{::fqdn}"
-      PSTOOLS/Add to CLASSPATH:        "E:/Program Files/Microsoft JDBC Driver 4.1 for SQL Server/sqljdbc_4.1/enu/sqljdbc41.jar"
+      PSTOOLS/Add to CLASSPATH:        'E:\Program Files\Microsoft JDBC Driver 4.1 for SQL Server\sqljdbc_4.1\enu\sqljdbc41.jar'
       PSTOOLS/EnablePPM Agent:         0
-      PSTOOLS/JavaVM Options:          "-Xms32m -Xmx128m -Xrs -Dxdo.ConfigFile=%PS_HOME%/appserv/xdo.cfg"
+      PSTOOLS/JavaVM Options:          '-Xms32m -Xmx128m -Xrs -Dxdo.ConfigFile=%PS_HOME%\appserv\xdo.cfg'
       PSAPPSRV/Min Instances:          2
       PSAPPSRV/Max Instances:          2
       PSAPPSRV/Max Fetch Size:         15000
@@ -202,12 +202,12 @@ prcs_domain_list:
     custom_file_settings:
       prcs_domain_files:
         ensure:  present
-        source:  "E:/PSoft/dpk/puppet/production/data/files/prcs"
-        path:    "%{hiera('ps_config_home')}/appserv"
+        source:  'E:\PSoft\dpk\puppet\production\data\files\prcs'
+        path:    "%{hiera('ps_config_home')}\\appserv"
 
     # Windows ONLY - Used to add environment paths to prcs service in registry
     service_registry_settings:
-      prcs_service:
+      prcs_cs_service:
         key:    HKLM\System\CurrentControlSet\Services\PsftPrcsDomain%{hiera('prcs_domain_name')}Service
         value:  Environment
         type:   array
@@ -217,7 +217,7 @@ prcs_domain_list:
           - PS_CUST_HOME=%{lookup('ps_cust_home')}
           - PS_HOME=%{lookup('ps_home_location')}
           - TUXDIR=%{lookup('tuxedo_home')}
-          - PS_FILEDIR=%{lookup('ps_config_home')}/appserv/prcs/%{hiera('prcs_domain_name')}/files/PS_UPLOADS
+          - PS_FILEDIR=%{lookup('ps_config_home')}\appserv\prcs\%{hiera('prcs_domain_name')}\files\PS_UPLOADS
 
     db_settings:
       db_name:        "%{hiera('db_name')}"
@@ -231,15 +231,15 @@ prcs_domain_list:
       Process Scheduler/PrcsServerName:             "%{hiera('prcs_domain_id')}"
       Security/DomainConnectionPwd:                 "%{hiera('domain_conn_pwd')}"
       Trace/TracePPM:                               0
-      Process Scheduler/DBBIN:                      "E:\\Program Files\\Microsoft SQL Server\\140\\Tools\\Binn"
+      Process Scheduler/DBBIN:                      'E:\Program Files\Microsoft SQL Server\140\Tools\Binn'
       Process Scheduler/Allow Dynamic Changes:      "Y"
       Process Scheduler/File Chunk Size:            8192
       Process Scheduler/CBLBIN:                     "%{hiera('ps_cust_home')}\\CBLBIN%PS_COBOLTYPE%;%{hiera('ps_app_home')}\\CBLBIN%PS_COBOLTYPE%"
       Process Scheduler/CRWRPTPATH:                 "%{hiera('ps_cust_home')}\\CRW;%{hiera('ps_app_home')}\\CRW"
-      Process Scheduler/WINWORD:                    "E:\\Program Files\\Microsoft Office\\Office15"
+      Process Scheduler/WINWORD:                    'E:\Program Files\Microsoft Office\Office15'
       PSTOOLS/Enable Remote Administration:         0
       PSTOOLS/EnablePPM Agent:                      0
-      PSTOOLS/Add to CLASSPATH:                     "E:\\Program Files\\Microsoft JDBC Driver 4.0 for SQL Server\\sqljdbc_4.0\\enu\\sqljdbc4.jar"
+      PSTOOLS/Add to CLASSPATH:                     'E:\Program Files\Microsoft JDBC Driver 4.0 for SQL Server\sqljdbc_4.0\enu\sqljdbc4.jar'
       SQR/Enhanced HTML:                            "Y"
       SQR/PSSQR:                                    "%{hiera('ps_cust_home')}\\sqr;%{hiera('ps_app_home')}\\sqr"
       Data Mover/LastScriptsDir:                    "%{hiera('ps_cust_home')}\\scripts;%{hiera('ps_app_home')}\\scripts"
@@ -272,7 +272,7 @@ pia_https_port:        443
 pia_psserver_list:     "appserv01.domain.com:%{hiera('jolt_port')}"
 pia_site_name:         CSPRD
 pia_webprofile_name:   PROD
-report_repository_dir: "E:/psreports"
+report_repository_dir: 'E:\psreports'
 webserver_type:        weblogic
 
 pia_domain_list:
@@ -290,8 +290,8 @@ pia_domain_list:
     custom_file_settings:
       pia_domain_files:
         ensure:  present
-        source:  "E:/PSoft/dpk/puppet/production/data/files/pia/%{hiera('pia_domain_name')}"
-        path:    "%{hiera('ps_config_home')}/webserv/%{hiera('pia_domain_name')}"
+        source:  "E:\\PSoft\\dpk\\puppet\\production\\data\\files\\pia\\%{hiera('pia_domain_name')}"
+        path:    "%{hiera('ps_config_home')}\\webserv\\%{hiera('pia_domain_name')}"
 
     # weblogic domain settings (weblogic.xml)
     wl_domain_settings:
@@ -343,8 +343,8 @@ pia_domain_list:
         ig.certificatePasswd:                  "{V1.1}XXXXXXXXXXXXXXXXXXXX=="
         ig.connector.smtptargetconnector.host: "smtp1.domain.com"
         ig.DefaultServer.LocalNode:            "PT_LOCAL"
-        ig.qas.repositoryHomeDir:              "E:/Temp/QASRepository"
-        secureFileKeystorePath:                "%{hiera('ps_config_home')}/webserv/%{hiera('pia_domain_name')}/piaconfig/keystore/pskey"
+        ig.qas.repositoryHomeDir:              'E:\Temp\QASRepository'
+        secureFileKeystorePath:                "%{hiera('ps_config_home')}\\webserv\\%{hiera('pia_domain_name')}\\piaconfig\\keystore\\pskey"
         secureFileKeystorePasswd:              "{V1.1}XXXXXXXXXXXXXXXXXXXX=="
 
     config_settings:
