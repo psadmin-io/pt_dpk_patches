@@ -1,3 +1,4 @@
+
 This repository contains fixes and enhancements to Oracle's PeopleSoft DPK.
 
 ## Pre-Requisites
@@ -12,7 +13,7 @@ This repository contains fixes and enhancements to Oracle's PeopleSoft DPK.
 `puppet module install puppetlabs-registry --version 2.0.2 --confdir [dir]`
 5. puppet module - [xml_fragment](https://forge.puppet.com/ianoberst/xml_fragment)  
 `puppet module install ianoberst-xml_fragment --version 1.0.2 --confdir [dir]`
-6. puppet module - [stdlib 4.11+] (https://forge.puppet.com/puppetlabs/stdlib)
+6. puppet module - [stdlib 4.11+](https://forge.puppet.com/puppetlabs/stdlib)  
 `puppet module upgrade puppetlabs-stdlib --confdir [dir]`
 7. [DeepRemove2](https://github.com/juanpablojofre/deepremove) - Used to delete weblogic/tuxedo folders that exceed the max path limit of windows.
 8. Set `JAVA_HOME` in system environment variables.
