@@ -502,7 +502,7 @@ index 693f506..db1b021 100644
          # remove services if present
          remove_tuxedo_services()
 diff --git a/pt_deploy/lib/puppet/provider/pt_deploy_weblogic/deploy_weblogic.rb b/pt_deploy/lib/puppet/provider/pt_deploy_weblogic/deploy_weblogic.rb
-index 444322d..2d05088 100644
+index 444322d..ef01fcc 100644
 --- a/pt_deploy/lib/puppet/provider/pt_deploy_weblogic/deploy_weblogic.rb
 +++ b/pt_deploy/lib/puppet/provider/pt_deploy_weblogic/deploy_weblogic.rb
 @@ -88,7 +88,9 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
@@ -515,11 +515,10 @@ index 444322d..2d05088 100644
      weblogic_archive_dir = Dir.mktmpdir(['wl', 'dir'], deploy_parent_location)
      FileUtils.chmod(0755, weblogic_archive_dir)
  
-@@ -202,14 +204,13 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
- 
+@@ -203,13 +205,13 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
          if Facter.value(:osfamily) == 'windows'
            Puppet.debug("Extracting WebLogic patch on Windows platform")
--
+ 
 -          #extract_zip_script = generate_windows_unzip_script(patch, weblogic_patch_dir)
 -          #system("powershell -File #{extract_zip_script}")
 -          #if $? == 0
@@ -537,7 +536,7 @@ index 444322d..2d05088 100644
          else
            Puppet.debug("Extracting WebLogic patch on Non Windows platform")
            if Facter.value(:kernel) == 'AIX'
-@@ -224,29 +225,60 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
+@@ -224,29 +226,55 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
            change_ownership(deploy_user, deploy_group, weblogic_patch_dir)
          end
          begin
@@ -564,7 +563,7 @@ index 444322d..2d05088 100644
 +                "apply -oh #{deploy_location} -silent -jdk #{jdk_location} -oop"
 +            else
 +              Puppet.debug("Installing OPatch patch #{weblogic_patch_num} from  #{patch_dir}")
-+              patch_apply_cmd = "java -jar #{patch_dir}\\opatch_generic.jar -silent oracle_home=#{deploy_location}"
++              patch_apply_cmd = "#{jdk_location}\\bin\\java -jar #{patch_dir}\\opatch_generic.jar -silent oracle_home=#{deploy_location}"
 +            end
  
 -            patch_dir = "#{weblogic_patch_dir}/#{weblogic_patch_num}"
@@ -592,27 +591,21 @@ index 444322d..2d05088 100644
              Puppet::Util::Execution.execute(patch_apply_cmd, :failonfail => true)
 -            Puppet.debug('Weblogic patch installation successfully')
            end
-+          Puppet.debug('Weblogic patch installation successfully')
++          Puppet.debug('Weblogic patch installation completed successfully')
          rescue Puppet::ExecutionFailure => e
            Puppet.debug("Weblogic patch installation failed: #{e.message}")
            raise Puppet::Error, "Installation of weblogic patch #{patch} failed: #{e.message}"
          ensure
--          FileUtils.remove_entry(weblogic_patch_dir)
 +          if Facter.value(:osfamily) == 'windows'
-+            system("DeepRemove2 #{weblogic_patch_dir} >nul 2>&1")
-+            if $? != 0
-+              # Fallback to standard removal
-+              # Note: This will fail to remove deep nested folders
-+              remove_cmd = "rmdir /Q /S #{weblogic_patch_dir}"
-+              system(remove_cmd)
-+            end
-+          else
-+            FileUtils.remove_entry(weblogic_patch_dir)
++            remove_cmd = "cd #{deploy_location} && md empty && robocopy empty #{weblogic_patch_dir} /E /PURGE /NOCOPY /MOVE"
++            system(remove_cmd)
 +          end
+           FileUtils.remove_entry(weblogic_patch_dir)
++          Puppet.debug("Deleted Weblogic patch installation directory #{weblogic_patch_dir}")
          end
        end
      else
-@@ -260,22 +292,25 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
+@@ -260,22 +288,25 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
  
      if Facter.value(:osfamily) == 'windows'
        cmd_prefix = ''
