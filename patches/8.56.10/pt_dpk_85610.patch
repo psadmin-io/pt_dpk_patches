@@ -279,6 +279,19 @@ index f83a57a..29771f8 100644
      parameter :ps_home_dir
      parameter :ps_cfg_home_dir
  
+diff --git a/pt_config/lib/puppet/type/pt_prcs_domain.rb b/pt_config/lib/puppet/type/pt_prcs_domain.rb
+index d0133ec..5c6614c 100644
+--- a/pt_config/lib/puppet/type/pt_prcs_domain.rb
++++ b/pt_config/lib/puppet/type/pt_prcs_domain.rb
+@@ -54,7 +54,7 @@ module Puppet
+       validate do |value|
+ 
+         prcs_features =
+-          [ "MSTRSRV", "APPENG", "KIOSK", "DOMAIN_GW", "SERVER_EVENTS" ]
++          [ "MSTRSRV", "APPENG", "PPM", "DOMAIN_GW", "SERVER_EVENTS" ]
+ 
+         value = [value] unless value.is_a? Array
+ 
 diff --git a/pt_config/lib/puppet/type/pt_prcs_domain_boot.rb b/pt_config/lib/puppet/type/pt_prcs_domain_boot.rb
 index c93d806..694efaf 100644
 --- a/pt_config/lib/puppet/type/pt_prcs_domain_boot.rb
