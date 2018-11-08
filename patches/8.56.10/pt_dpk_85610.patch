@@ -426,7 +426,7 @@ index af026e6..4a47182 100644
      File.chmod(0755, extract_file_path)
      Puppet.debug(File.read(extract_file_path))
 diff --git a/pt_deploy/lib/puppet/provider/pt_deploy_tuxedo/deploy_tuxedo.rb b/pt_deploy/lib/puppet/provider/pt_deploy_tuxedo/deploy_tuxedo.rb
-index 693f506..db1b021 100644
+index 693f506..a2301e0 100644
 --- a/pt_deploy/lib/puppet/provider/pt_deploy_tuxedo/deploy_tuxedo.rb
 +++ b/pt_deploy/lib/puppet/provider/pt_deploy_tuxedo/deploy_tuxedo.rb
 @@ -152,6 +152,18 @@ Puppet::Type.type(:pt_deploy_tuxedo).provide :deploy_tuxedo,
@@ -460,7 +460,7 @@ index 693f506..db1b021 100644
            if $? == 0
              Puppet.debug("Extraction of Tuxedo patch #{patch} successful")
            else
-@@ -219,22 +230,29 @@ Puppet::Type.type(:pt_deploy_tuxedo).provide :deploy_tuxedo,
+@@ -219,22 +230,23 @@ Puppet::Type.type(:pt_deploy_tuxedo).provide :deploy_tuxedo,
            tuxedo_opatch_cmd = "#{tuxedo_home}\\OPatch\\opatch.bat"
  
            tuxedo_patch_dir = tuxedo_patch_dir.gsub('/', '\\')
@@ -480,7 +480,6 @@ index 693f506..db1b021 100644
 -            Puppet.debug("Tuxedo Patch #{tuxedo_patch_num} install successful")
 -          else
 -            Puppet.debug("Tuxedo Patch #{tuxedo_patch_num} install failed")
-+          tuxedo_patch_dir = tuxedo_patch_dir.gsub('/', '\\')
 +
 +          patch_apply_cmd = "cd #{tuxedo_patch_dir} && #{tuxedo_opatch_cmd} apply #{tuxedo_patch_num} -silent"
 +
@@ -496,17 +495,12 @@ index 693f506..db1b021 100644
 +            Puppet.debug("Tuxedo patch installation failed: #{e.message}")
 +            raise Puppet::Error, "Installation of tuxedo patch #{patch} failed: #{e.message}"
 +          ensure
-+            system("DeepRemove2 #{tuxedo_patch_dir} >nul 2>&1")
-+            if $? != 0
-+              # Fallback to standard removal
-+              # Note: This will fail to remove deep nested folders
-+              remove_cmd = "rmdir /Q /S #{tuxedo_patch_dir}"
-+              system(remove_cmd)
-+            end
++            FileUtils.remove_entry(tuxedo_patch_dir)
++            Puppet.debug("Deleted Tuxedo patch installation directory #{tuxedo_patch_dir}")
            end
            # start the services
            Puppet.debug("Starting Tuxedo ProcManager service [#{tuxedo_procmgr_service}]")
-@@ -424,6 +442,7 @@ Puppet::Type.type(:pt_deploy_tuxedo).provide :deploy_tuxedo,
+@@ -424,6 +436,7 @@ Puppet::Type.type(:pt_deploy_tuxedo).provide :deploy_tuxedo,
          # remove the registry entry if present
          system("REG DELETE HKEY_LOCAL_MACHINE\\SOFTWARE\\ORACLE\\KEY_#{oracle_home_name} /f >NUL 2>&1")
          system("REG DELETE HKEY_LOCAL_MACHINE\\SOFTWARE\\ORACLE\\TUXEDO\\12.2.2.0.0_VS2015 /f >NUL 2>&1")

@@ -15,9 +15,8 @@ This repository contains fixes and enhancements to Oracle's PeopleSoft DPK.
 `puppet module install ianoberst-xml_fragment --version 1.0.2 --confdir [dir]`
 6. puppet module - [stdlib 4.11+](https://forge.puppet.com/puppetlabs/stdlib)  
 `puppet module upgrade puppetlabs-stdlib --confdir [dir]`
-7. [DeepRemove2](https://github.com/juanpablojofre/deepremove) - Used to delete weblogic/tuxedo folders that exceed the max path limit of windows.
-8. Set `JAVA_HOME` in system environment variables.
-9. If using custom service accounts, each service account must be granted rights to logon as service or the service will fail to start.
+7. Set `JAVA_HOME` in system environment variables.
+8. If using custom service accounts, each service account must be granted rights to logon as service or the service will fail to start.
 
 ## Features  
 
@@ -32,12 +31,13 @@ This repository contains fixes and enhancements to Oracle's PeopleSoft DPK.
 * Fixes Tuxedo patch support for windows.
 * Fixes various Tuxedo install/uninstall issues.
 * Fixes various WebLogic install/uninstall issues.
+* Fix Process Scheduler feature validation (change `KIOSK` to `PPM`)
 * Other minor cleanup/fixes.
-
 
 ## How to apply DPK patch
 1. Copy pt_dpk_[version].patch to `/pt/dpk/puppet/production/modules/`
-2. Navigate to `/pt/dpk/puppet/production/modules/`
-3. Run `git apply pt_dpk_[version].patch`  
+1. Navigate to `/pt/dpk/puppet/production/modules/`
+1. On Windows platform, set `git config core.autocrlf input`
+1. Run `git apply pt_dpk_[version].patch`  
 For example, if applying DPK 8.56.10 patch, you would run the following command  
 `git apply -v pt_dpk_85610.patch`
