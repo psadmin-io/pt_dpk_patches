@@ -31,7 +31,7 @@ This repository contains fixes and enhancements to Oracle's PeopleSoft DPK.
 * Fixes Tuxedo patch support for windows.
 * Fixes various Tuxedo install/uninstall issues.
 * Fixes various WebLogic install/uninstall issues.
-* Fix Process Scheduler feature validation (change `KIOSK` to `PPM`)
+* Fixes Process Scheduler feature validation (change `KIOSK` to `PPM`)
 * Other minor cleanup/fixes.
 
 ## How to apply DPK patch
