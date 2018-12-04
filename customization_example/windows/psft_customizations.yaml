@@ -203,7 +203,7 @@ prcs_domain_list:
       prcs_domain_files:
         ensure:  present
         source:  'E:\PSoft\dpk\puppet\production\data\files\prcs'
-        path:    "%{hiera('ps_config_home')}\\appserv"
+        path:    "%{hiera('ps_config_home')}\\appserv\\prcs"
 
     # Windows ONLY - Used to add environment paths to prcs service in registry
     service_registry_settings:

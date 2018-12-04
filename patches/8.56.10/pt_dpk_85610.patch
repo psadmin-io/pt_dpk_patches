@@ -964,7 +964,7 @@ index 2bb8ec5..56f17b0 100644
    if $ensure == present {
      $db_location = hiera('db_location')
 diff --git a/pt_profile/manifests/pt_pia.pp b/pt_profile/manifests/pt_pia.pp
-index 59569ea..836cde9 100644
+index 59569ea..7f25583 100644
 --- a/pt_profile/manifests/pt_pia.pp
 +++ b/pt_profile/manifests/pt_pia.pp
 @@ -51,32 +51,6 @@ class pt_profile::pt_pia {
@@ -1000,23 +1000,22 @@ index 59569ea..836cde9 100644
    $pia_domain_list = hiera('pia_domain_list')
    $pia_domain_list.each |$domain_name, $pia_domain_info| {
      notify {"Setting up PIA domain ${domain_name}":}
-@@ -117,6 +91,101 @@ class pt_profile::pt_pia {
+@@ -117,6 +91,102 @@ class pt_profile::pt_pia {
        site_list             => $pia_site_list_array,
        recreate              => $recreate,
      }
 +
 +    if $ensure == present {
 +      $igw_settings = $pia_domain_info['igw_settings']
-+      #validate_hash($igw_settings)
-+      notify {"IGW settings : ${igw_settings}":}
-+      $config   = "${ps_cfg_home_dir}/webserv/${domain_name}/applications/peoplesoft/PSIGW.war/WEB-INF/integrationGateway.properties"
-+
-+      $defaults = {
-+        'path'    => $config,
-+        'section' => '',
++      if $igw_settings {
++        notify {"IGW settings : ${igw_settings}":}
++        $config   = "${ps_cfg_home_dir}/webserv/${domain_name}/applications/peoplesoft/PSIGW.war/WEB-INF/integrationGateway.properties"
++        $defaults = {
++          'path'    => $config,
++          'section' => '',
++        }
++        create_ini_settings($igw_settings,  $defaults)
 +      }
-+
-+      create_ini_settings($igw_settings,  $defaults)
 +
 +      $pia_wl_domain_settings = $pia_domain_info['wl_domain_settings']
 +      notify {"Applying Weblogic Domain Settings..":}
@@ -1043,6 +1042,7 @@ index 59569ea..836cde9 100644
 +
 +      $pia_wl_application_settings = $pia_domain_info['wl_application_settings']
 +      if $pia_wl_application_settings {
++        notify {"Applying Weblogic Application Settings..":}
 +        $pia_wl_application_settings.each |$resource, $hash| {
 +          $content = $hash['content']
 +          if $content {
@@ -1065,6 +1065,7 @@ index 59569ea..836cde9 100644
 +
 +      $pia_custom_file_settings = $pia_domain_info['custom_file_settings']
 +      if $pia_custom_file_settings {
++        notify {"Applying Custom File Settings..":}
 +        $pia_custom_file_settings.each |$resource, $hash| {
 +          $path = $hash['path']
 +          if $path == undef {
@@ -1287,7 +1288,7 @@ index 286f0f2..c61c9fa 100644
    $redeploy = hiera('redeploy', false)
    class { '::pt_setup::tools_deployment':
 diff --git a/pt_setup/manifests/tools_deployment.pp b/pt_setup/manifests/tools_deployment.pp
-index 623cc30..d27d3ec 100644
+index 623cc30..3dd7214 100644
 --- a/pt_setup/manifests/tools_deployment.pp
 +++ b/pt_setup/manifests/tools_deployment.pp
 @@ -51,6 +51,15 @@ class pt_setup::tools_deployment (
@@ -1318,11 +1319,19 @@ index 623cc30..d27d3ec 100644
        }
        $db_platform = hiera('db_platform')
        if ($oracleclient_location) and ($db_platform == 'ORACLE') {
-@@ -185,19 +199,54 @@ class pt_setup::tools_deployment (
+@@ -185,19 +199,62 @@ class pt_setup::tools_deployment (
          remove            => $jdk_remove,
          patch_list        => $jdk_patches_list,
        }
++      # Make sure both service and domain user have access to JDK
 +      if $::osfamily == 'windows' and $ensure == present {
++        acl { 'jdk_domain_user' :
++          target      => $jdk_location,
++          purge       => false,
++          permissions => [
++            { identity => $::identity[user], rights => ['write','read','execute'] }
++          ],
++        }
 +        if $appserver_service_user != undef and $domain_type in [ 'all', 'appserver', 'appbatch'] {
 +          acl { 'jdk_app_service' :
 +            target      => $jdk_location,
@@ -1381,7 +1390,7 @@ index 623cc30..d27d3ec 100644
          deploy_user               => $tools_install_user,
          deploy_user_group         => $tools_install_group,
          archive_file              => $weblogic_archive_file,
-@@ -210,17 +259,35 @@ class pt_setup::tools_deployment (
+@@ -210,17 +267,35 @@ class pt_setup::tools_deployment (
          remove                    => $weblogic_remove,
          patch_list                => $weblogic_patches_list,
        }
@@ -1424,7 +1433,7 @@ index 623cc30..d27d3ec 100644
          deploy_user               => $tools_install_user,
          deploy_user_group         => $tools_install_group,
          archive_file              => $tuxedo_archive_file,
-@@ -232,6 +299,19 @@ class pt_setup::tools_deployment (
+@@ -232,6 +307,19 @@ class pt_setup::tools_deployment (
          remove                    => $tuxedo_remove,
          patch_list                => $tuxedo_patches_list,
          jdk_location              => $jdk_location,
