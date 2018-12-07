@@ -82,6 +82,19 @@ index 30e87e2..6a20f5e 100644
       end
  
       # This event triggers when the service receives a signal to pause.
+diff --git a/pt_config/lib/pt_comp_utils/database.rb b/pt_config/lib/pt_comp_utils/database.rb
+index 2a410fe..eb9d33f 100644
+--- a/pt_config/lib/pt_comp_utils/database.rb
++++ b/pt_config/lib/pt_comp_utils/database.rb
+@@ -217,7 +217,7 @@ module PtCompUtils
+     end
+     ps_cust_home_dir = get_registry_value('PS_CUST_HOME', false)
+     if ps_cust_home_dir.nil? == false
+-      ENV['PS_CUST_HOME'] = ps_app_home_dir
++      ENV['PS_CUST_HOME'] = ps_cust_home_dir
+     end
+   end
+ 
 diff --git a/pt_config/lib/pt_comp_utils/webserver.rb b/pt_config/lib/pt_comp_utils/webserver.rb
 index aae8a2c..c89648e 100644
 --- a/pt_config/lib/pt_comp_utils/webserver.rb
@@ -94,6 +107,58 @@ index aae8a2c..c89648e 100644
          begin
            Open3.popen3(wl_status_cmd) do |stdin, out, err|
              stdin.close
+diff --git a/pt_config/lib/puppet/provider/psftdomain.rb b/pt_config/lib/puppet/provider/psftdomain.rb
+index c0e54b3..e4ee81e 100644
+--- a/pt_config/lib/puppet/provider/psftdomain.rb
++++ b/pt_config/lib/puppet/provider/psftdomain.rb
+@@ -280,8 +280,15 @@ class Puppet::Provider::PsftDomain < Puppet::Provider
+       psadmin_cmd = File.join(resource[:ps_home_dir], 'appserv', 'psadmin')
+ 
+       if Facter.value(:osfamily) == 'windows'
++        # generate a batch script to avoid environment variables being resolved when passed as %%ENV%%
++        psadmin_script_file = File.join(Dir.tmpdir(), 'psadmin_configure.bat')
+         command = "#{psadmin_cmd} #{domain_type} configure -d #{domain_name} #{config_args}"
+-        command_output = execute_command(command)
++        File.open(psadmin_script_file, 'w') do |script_file|
++          script_file.puts("#{command}")
++        end
++        File.chmod(0755, psadmin_script_file)
++        command_output = execute_command(psadmin_script_file)
++        File.delete(psadmin_script_file)
+       elsif  Facter.value(:osfamily) == 'Solaris'
+         command_output = domain_cmd('-', resource[:os_user], '-c',
+                           "#{psadmin_cmd} #{domain_type} configure -d " +
+@@ -295,18 +302,20 @@ class Puppet::Provider::PsftDomain < Puppet::Provider
+                           "#{psadmin_cmd} #{domain_type} configure -d " +
+                           "#{domain_name}  #{config_args}")
+       end
+-      Puppet.debug("Config outout: #{command_output}")
++      Puppet.debug("Config output: #{command_output}")
+ 
+     rescue Puppet::ExecutionFailure => e
+-     if Facter.value(:kernel) == 'Linux'
+-           command_output = domain_cmd('-m', '-s', '/bin/bash', '-l',  resource[:os_user], '-c',
+-           "#{psadmin_cmd} #{domain_type} configure -d " +
+-           "#{domain_name}  #{config_args}")
+-  
+-              if command_output.include? 'Process Scheduler Server configuration complete'
+-                 return command_output
+-              end
+-     end
++      if Facter.value(:osfamily) == 'windows'
++        File.delete(psadmin_script_file)
++      elsif Facter.value(:kernel) == 'Linux'
++        command_output = domain_cmd('-m', '-s', '/bin/bash', '-l',  resource[:os_user], '-c',
++        "#{psadmin_cmd} #{domain_type} configure -d " +
++        "#{domain_name}  #{config_args}")
++
++        if command_output.include? 'Process Scheduler Server configuration complete'
++          return command_output
++        end
++      end
+     raise Puppet::Error,
+           "Unable to configure domain: #{e.message}"
+     end
 diff --git a/pt_config/lib/puppet/provider/pt_appserver_domain/appserver_domain.rb b/pt_config/lib/puppet/provider/pt_appserver_domain/appserver_domain.rb
 index 2c08b7d..9427f1f 100644
 --- a/pt_config/lib/puppet/provider/pt_appserver_domain/appserver_domain.rb

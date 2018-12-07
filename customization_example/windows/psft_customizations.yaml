@@ -113,9 +113,10 @@ wsl_port:              6000
 
 appserver_domain_list:
   "%{hiera('appserver_domain_name')}":
-    os_user:         "%{hiera('domain_user')}"
-    ps_cfg_home_dir: "%{hiera('ps_config_home')}"
-    template_type:   "%{hiera('appserver_template')}"
+    os_user:           "%{hiera('domain_user')}"
+    ps_cust_home_dir:  "%{hiera('ps_cust_home')}"
+    ps_cfg_home_dir:   "%{hiera('ps_config_home')}"
+    template_type:     "%{hiera('appserver_template')}"
 
     # custom domain files
     # Specify source location to copy files from post install
@@ -149,25 +150,40 @@ appserver_domain_list:
       db_connect_pwd: "%{hiera('db_connect_pwd')}"
 
     config_settings:
-      Domain Settings/Domain ID:       "%{hiera('appserver_domain_name')}"
-      Trace/MailErrorReport:           "user1@domain.com;user2@domain.com"
-      SMTP Settings/SMTPServer:        "smtp1.domain.com"
-      SMTP Settings/SMTPPort:          25
-      SMTP Settings/SMTPServer1:       "smtp2.domain.com"
-      SMTP Settings/SMTPPort1:         25
-      SMTP Settings/SMTPSender:        "%{hiera('appserver_domain_name')}@domain.com"
-      SMTP Settings/SMTPSourceMachine: "%{::fqdn}"
-      PSTOOLS/Add to CLASSPATH:        'E:\Program Files\Microsoft JDBC Driver 4.1 for SQL Server\sqljdbc_4.1\enu\sqljdbc41.jar'
-      PSTOOLS/EnablePPM Agent:         0
-      PSTOOLS/JavaVM Options:          '-Xms32m -Xmx128m -Xrs -Dxdo.ConfigFile=%PS_HOME%\appserv\xdo.cfg'
-      PSAPPSRV/Min Instances:          2
-      PSAPPSRV/Max Instances:          2
-      PSAPPSRV/Max Fetch Size:         15000
-      Security/DomainConnectionPwd:    "%{hiera('domain_conn_pwd')}"
-      JOLT Listener/Port:              "%{hiera('jolt_port')}"
-      JOLT Listener/Address:           0.0.0.0
-      Workstation Listener/Port:       "%{hiera('wsl_port')}"
-      PSRENSRV/default_http_port:      80
+      Domain Settings/Domain ID:             "%{hiera('appserver_domain_name')}"
+      JOLT Listener/Port:                    "%{hiera('jolt_port')}"
+      JOLT Listener/Address:                 0.0.0.0
+      PSANALYTICSRV/Min Instances:           1
+      PSANALYTICSRV/Max Instances:           2
+      PSAPPSRV/Min Instances:                2
+      PSAPPSRV/Max Instances:                2
+      PSAPPSRV/Max Fetch Size:               15000
+      PSBRKHND_dflt/Min Instances:           1
+      PSBRKHND_dflt/Max Instances:           2
+      PSPPMSRV/Min Instances:                0
+      PSPPMSRV/Max Instances:                0
+      PSPUBHND_dflt/Min Instances:           1
+      PSPUBHND_dflt/Max Instances:           2
+      PSRENSRV/default_http_port:            7180
+      PSRENSRV/default_auth_token:           'domain.com'
+      PSSAMSRV/Min Instances:                1
+      PSSAMSRV/Max Instances:                2
+      PSSUBHND_dflt/Min Instances:           1
+      PSSUBHND_dflt/Max Instances:           2
+      PSTOOLS/Add to CLASSPATH:              'E:\Program Files\Microsoft JDBC Driver 4.1 for SQL Server\sqljdbc_4.1\enu\sqljdbc41.jar'
+      PSTOOLS/EnablePPM Agent:               0
+      PSTOOLS/Enable Remote Administration:  0
+      PSTOOLS/JavaVM Options:                '-Xms32m -Xmx128m -Xrs -Dxdo.ConfigFile=%%PS_HOME%%\appserv\xdo.cfg'
+      RemoteCall/RCCBL PRDBIN:               '%%PS_CUST_HOME%%\cblbin%%PS_COBOLTYPE%%;%%PS_APP_HOME%%\cblbin%%PS_COBOLTYPE%%;%%PS_HOME%%\cblbin%%PS_COBOLTYPE%%'
+      Security/DomainConnectionPwd:          "%{hiera('domain_conn_pwd')}"
+      SMTP Settings/SMTPServer:              "smtp1.domain.com"
+      SMTP Settings/SMTPPort:                25
+      SMTP Settings/SMTPServer1:             "smtp2.domain.com"
+      SMTP Settings/SMTPPort1:               25
+      SMTP Settings/SMTPSender:              "%{hiera('appserver_domain_name')}@domain.com"
+      SMTP Settings/SMTPSourceMachine:       "%{::fqdn}"
+      Trace/MailErrorReport:                 "user1@domain.com;user2@domain.com"
+      Workstation Listener/Port:             "%{hiera('wsl_port')}"
 
     feature_settings:
       PUBSUB:        "Yes"
