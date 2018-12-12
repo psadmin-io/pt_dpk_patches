@@ -1029,7 +1029,7 @@ index 2bb8ec5..56f17b0 100644
    if $ensure == present {
      $db_location = hiera('db_location')
 diff --git a/pt_profile/manifests/pt_pia.pp b/pt_profile/manifests/pt_pia.pp
-index 59569ea..7f25583 100644
+index 59569ea..33a406b 100644
 --- a/pt_profile/manifests/pt_pia.pp
 +++ b/pt_profile/manifests/pt_pia.pp
 @@ -51,32 +51,6 @@ class pt_profile::pt_pia {
@@ -1065,7 +1065,7 @@ index 59569ea..7f25583 100644
    $pia_domain_list = hiera('pia_domain_list')
    $pia_domain_list.each |$domain_name, $pia_domain_info| {
      notify {"Setting up PIA domain ${domain_name}":}
-@@ -117,6 +91,102 @@ class pt_profile::pt_pia {
+@@ -117,6 +91,103 @@ class pt_profile::pt_pia {
        site_list             => $pia_site_list_array,
        recreate              => $recreate,
      }
@@ -1078,6 +1078,7 @@ index 59569ea..7f25583 100644
 +        $defaults = {
 +          'path'    => $config,
 +          'section' => '',
++          'key_val_separator' => '='
 +        }
 +        create_ini_settings($igw_settings,  $defaults)
 +      }
