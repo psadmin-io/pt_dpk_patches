@@ -309,39 +309,33 @@ pia_domain_list:
         source:  "E:\\PSoft\\dpk\\puppet\\production\\data\\files\\pia\\%{hiera('pia_domain_name')}"
         path:    "%{hiera('ps_config_home')}\\webserv\\%{hiera('pia_domain_name')}"
 
-    # weblogic domain settings (weblogic.xml)
-    wl_domain_settings:
-      cookie_name:
-        ensure: present
-        xpath: "/weblogic-web-app/session-descriptor/cookie-name"
-        content:
-          value:  CSPRD-443-PORTAL-PSJSESSIONID
-      invalidation_interval:
-        ensure: present
-        xpath: "/weblogic-web-app/session-descriptor/invalidation-interval-secs"
-        content:
-          value:  '90'
+    # Supports removing/modifying xml nodes
+    # To modify other xml files, simply follow the format below
+    # See https://forge.puppet.com/ianoberst/xml_fragment/readme for more information on format
+    xml_file:
+      "%{hiera('pia_app_home')}/PORTAL.war/WEB-INF/weblogic.xml":
+        cookie_name:
+          ensure: present
+          xpath: "/weblogic-web-app/session-descriptor/cookie-name"
+          content:
+            value:  CSPRD-443-PORTAL-PSJSESSIONID
+        invalidation_interval:
+          ensure: present
+          xpath: "/weblogic-web-app/session-descriptor/invalidation-interval-secs"
+          content:
+            value:  '90'
+      "%{hiera('pia_app_home')}/PORTAL.war/WEB-INF/web.xml":
+        psfilter:
+          ensure: absent
+          xpath: "/web-app/filter[filter-name='psfilter']"
+        psfilter_mapping:
+          ensure: absent
+          xpath: "/web-app/filter-mapping[filter-name='psfilter']"
 
-    # weblogic application settings (web.xml)
-    wl_application_settings:
-      remove_psfilter:
-        ensure: absent
-        xpath: "/web-app/filter[filter-name='psfilter']"
-      remove_psfilter_mapping:
-        ensure: absent
-        xpath: "/web-app/filter-mapping[filter-name='psfilter']"
-
-    webserver_settings:
-      webserver_type:           "%{hiera('webserver_type')}"
-      webserver_home:           "%{hiera('weblogic_location')}"
-      webserver_admin_user:     system
-      webserver_admin_user_pwd: password
-      webserver_admin_port:     "%{hiera('pia_http_port')}"
-      webserver_http_port:      "%{hiera('pia_http_port')}"
-      webserver_https_port:     "%{hiera('pia_https_port')}"
-
-    igw_settings:
-      "":
+    # Supports adding/modifying property sections
+    # To modify other property files, simply follow the format below
+    property_file:
+      "%{hiera('pia_app_home')}/PSIGW.war/WEB-INF/integrationGateway.properties":
         ig.version:                  "8.56"
         ig.isc.serverURL:            "//appserv01.domain.com:5000,//appserv01.domain.com:5100"
         ig.isc.userid:               "IGUSER"
@@ -362,6 +356,15 @@ pia_domain_list:
         ig.qas.repositoryHomeDir:              'E:\Temp\QASRepository'
         secureFileKeystorePath:                "%{hiera('ps_config_home')}\\webserv\\%{hiera('pia_domain_name')}\\piaconfig\\keystore\\pskey"
         secureFileKeystorePasswd:              "{V1.1}XXXXXXXXXXXXXXXXXXXX=="
+
+    webserver_settings:
+      webserver_type:           "%{hiera('webserver_type')}"
+      webserver_home:           "%{hiera('weblogic_location')}"
+      webserver_admin_user:     system
+      webserver_admin_user_pwd: password
+      webserver_admin_port:     "%{hiera('pia_http_port')}"
+      webserver_http_port:      "%{hiera('pia_http_port')}"
+      webserver_https_port:     "%{hiera('pia_https_port')}"
 
     config_settings:
       Servers/PIA:

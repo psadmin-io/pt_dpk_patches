@@ -1029,7 +1029,7 @@ index 2bb8ec5..56f17b0 100644
    if $ensure == present {
      $db_location = hiera('db_location')
 diff --git a/pt_profile/manifests/pt_pia.pp b/pt_profile/manifests/pt_pia.pp
-index 59569ea..33a406b 100644
+index 59569ea..1c2f6bd 100644
 --- a/pt_profile/manifests/pt_pia.pp
 +++ b/pt_profile/manifests/pt_pia.pp
 @@ -51,32 +51,6 @@ class pt_profile::pt_pia {
@@ -1065,65 +1065,48 @@ index 59569ea..33a406b 100644
    $pia_domain_list = hiera('pia_domain_list')
    $pia_domain_list.each |$domain_name, $pia_domain_info| {
      notify {"Setting up PIA domain ${domain_name}":}
-@@ -117,6 +91,103 @@ class pt_profile::pt_pia {
+@@ -117,6 +91,68 @@ class pt_profile::pt_pia {
        site_list             => $pia_site_list_array,
        recreate              => $recreate,
      }
 +
 +    if $ensure == present {
-+      $igw_settings = $pia_domain_info['igw_settings']
-+      if $igw_settings {
-+        notify {"IGW settings : ${igw_settings}":}
-+        $config   = "${ps_cfg_home_dir}/webserv/${domain_name}/applications/peoplesoft/PSIGW.war/WEB-INF/integrationGateway.properties"
-+        $defaults = {
-+          'path'    => $config,
-+          'section' => '',
-+          'key_val_separator' => '='
-+        }
-+        create_ini_settings($igw_settings,  $defaults)
++      $property_files = $pia_domain_info['property_file']
++      if $property_files {
++        notify {"Applying property file updates..":}
++        $property_files.each |$file, $data| {
++          notify {"Updating property file ${file}":}
++		  $defaults = {
++            'path'    => $file,
++            'section' => '',
++            'key_val_separator' => '='
++          }
++          $hash = {"" => $data}
++          create_ini_settings($hash,  $defaults)
++		}
 +      }
 +
-+      $pia_wl_domain_settings = $pia_domain_info['wl_domain_settings']
-+      notify {"Applying Weblogic Domain Settings..":}
-+      if $pia_wl_domain_settings {
-+        $pia_wl_domain_settings.each |$resource, $hash| {
-+          $content = $hash['content']
-+          if $content {
-+            xml_fragment { $resource:
-+              ensure  => $hash['ensure'],
-+              path    => "${ps_cfg_home_dir}/webserv/${domain_name}/applications/peoplesoft/PORTAL.war/WEB-INF/weblogic.xml",
-+              xpath   => $hash['xpath'],
-+              content => $content
++      $xml_files = $pia_domain_info['xml_file']
++      if $xml_files {
++        notify {"Applying xml file updates..":}
++        $xml_files.each |$file, $data| {
++          notify {"Updating xml file ${file}":}
++          $data.each |$resource, $hash| {
++            $content = $hash['content']
++            if $content {
++              xml_fragment { $resource:
++                ensure  => $hash['ensure'],
++                path    => "${file}",
++                xpath   => $hash['xpath'],
++                content => $content
++              }
 +            }
-+          }
-+          else {
-+            xml_fragment { $resource:
-+              ensure  => $hash['ensure'],
-+              path    => "${ps_cfg_home_dir}/webserv/${domain_name}/applications/peoplesoft/PORTAL.war/WEB-INF/weblogic.xml",
-+              xpath   => $hash['xpath']
-+            }
-+          }
-+        }
-+      }
-+
-+      $pia_wl_application_settings = $pia_domain_info['wl_application_settings']
-+      if $pia_wl_application_settings {
-+        notify {"Applying Weblogic Application Settings..":}
-+        $pia_wl_application_settings.each |$resource, $hash| {
-+          $content = $hash['content']
-+          if $content {
-+            xml_fragment { $resource:
-+              ensure  => $hash['ensure'],
-+              path    => "${ps_cfg_home_dir}/webserv/${domain_name}/applications/peoplesoft/PORTAL.war/WEB-INF/web.xml",
-+              xpath   => $hash['xpath'],
-+              content => $content
-+            }
-+          }
-+          else {
-+            xml_fragment { $resource:
-+              ensure  => $hash['ensure'],
-+              path    => "${ps_cfg_home_dir}/webserv/${domain_name}/applications/peoplesoft/PORTAL.war/WEB-INF/web.xml",
-+              xpath   => $hash['xpath']
++            else {
++              xml_fragment { $resource:
++                ensure  => $hash['ensure'],
++                path    => "${file}",
++                xpath   => $hash['xpath']
++              }
 +            }
 +          }
 +        }
@@ -1135,7 +1118,7 @@ index 59569ea..33a406b 100644
 +        $pia_custom_file_settings.each |$resource, $hash| {
 +          $path = $hash['path']
 +          if $path == undef {
-+            $path = "${ps_cfg_home_dir}/webserv/${domain_name}/applications/peoplesoft/PORTAL.war/WEB-INF/web.xml"
++            $path = "${ps_cfg_home_dir}/webserv/${domain_name}"
 +          }
 +          file { $resource:
 +            ensure  => $hash['ensure'],
@@ -1143,24 +1126,6 @@ index 59569ea..33a406b 100644
 +            source  => $hash['source'],
 +            recurse => true,
 +            force   => true
-+          }
-+        }
-+      }
-+
-+      $pia_site_list.each |$site_name, $pia_site_info| {
-+
-+        # Handle text.properties
-+        $properties = $pia_site_info['text_settings']
-+        if $properties {
-+          $config   = "${ps_cfg_home_dir}/webserv/${domain_name}/applications/peoplesoft/PORTAL.war/WEB-INF/psftdocs/${site_name}/text.properties"
-+          $properties.each | $setting, $value | {
-+            ini_setting { "${domain_name}, ${site_name} ${setting} ${value}" :
-+              ensure  => present,
-+              path    => $config,
-+              section => '',
-+              setting => $setting,
-+              value   => $value,
-+            }
 +          }
 +        }
 +      }
