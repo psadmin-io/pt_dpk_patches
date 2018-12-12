@@ -23,7 +23,7 @@ This repository contains fixes and enhancements to Oracle's PeopleSoft DPK.
 ### Customization Enhancements
 * Windows service customization for app/prcs/pia domains.
 * Registry support for domain services.
-* XML support to handle WebLogic xml files in PIA.
+* PIA XML/Property file support for modifications.
 * Custom file support to copy files to app/prcs/pia domain folders post-installation.
 
 ### Bug Fixes

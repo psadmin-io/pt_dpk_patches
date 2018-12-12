@@ -279,6 +279,7 @@ prcs_domain_list:
 
 ### PIA ###
 
+pia_app_home:          "%{hiera('ps_config_home')}/webserv/%{hiera('pia_domain_name')}/applications/peoplesoft"
 pia_domain_name:       pt85610cs
 pia_gateway_user:      administrator
 pia_gateway_user_pwd:  'password'
@@ -309,7 +310,7 @@ pia_domain_list:
         source:  "E:\\PSoft\\dpk\\puppet\\production\\data\\files\\pia\\%{hiera('pia_domain_name')}"
         path:    "%{hiera('ps_config_home')}\\webserv\\%{hiera('pia_domain_name')}"
 
-    # Supports removing/modifying xml nodes
+    # Supports updating xml nodes
     # To modify other xml files, simply follow the format below
     # See https://forge.puppet.com/ianoberst/xml_fragment/readme for more information on format
     xml_file:
@@ -332,7 +333,7 @@ pia_domain_list:
           ensure: absent
           xpath: "/web-app/filter-mapping[filter-name='psfilter']"
 
-    # Supports adding/modifying property sections
+    # Supports updating property sections
     # To modify other property files, simply follow the format below
     property_file:
       "%{hiera('pia_app_home')}/PSIGW.war/WEB-INF/integrationGateway.properties":
