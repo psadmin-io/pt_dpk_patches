@@ -195,6 +195,30 @@ index 3ae2052..a2da364 100644
          })
        rescue Exception => e
          if (e.message.include?('The specified service already exists') ||
+diff --git a/pt_config/lib/puppet/provider/pt_prcs_domain_boot/prcs_domain_boot.rb b/pt_config/lib/puppet/provider/pt_prcs_domain_boot/prcs_domain_boot.rb
+index 9f472c6..1bfbcdc 100644
+--- a/pt_config/lib/puppet/provider/pt_prcs_domain_boot/prcs_domain_boot.rb
++++ b/pt_config/lib/puppet/provider/pt_prcs_domain_boot/prcs_domain_boot.rb
+@@ -67,6 +67,8 @@ Puppet::Type.type(:pt_prcs_domain_boot).provide :prcs_domain_boot,
+       domain_name = resource[:domain_name]
+       ps_cfg_home = resource[:ps_cfg_home_dir]
+       ps_home     = resource[:ps_home_dir]
++      service_user = resource[:service_user]
++      service_pwd  = resource[:service_pwd]
+ 
+       prcs_win_service_file = File.join(ps_cfg_home, 'appserv', 'prcs', domain_name, "prcs_win_service.rb")
+       prcs_win_service_content = template('puppet:///modules/pt_config/pt_prcs/prcs_win_service.rb.erb',
+@@ -97,7 +99,9 @@ Puppet::Type.type(:pt_prcs_domain_boot).provide :prcs_domain_boot,
+           :binary_path_name => "#{ruby_executable.chomp} #{prcs_win_service_file}",
+           :load_order_group => 'Network',
+           :dependencies     => nil,
+-          :display_name     => prcs_domain_service
++          :display_name     => prcs_domain_service,
++          :service_start_name => "#{service_user}",
++          :password           => "#{service_pwd}"
+         })
+       rescue Exception => e
+         if (e.message.include?('The specified service already exists') ||
 diff --git a/pt_config/lib/puppet/provider/pt_webserver_domain/weblogic_domain.rb b/pt_config/lib/puppet/provider/pt_webserver_domain/weblogic_domain.rb
 index 9a5e080..0665ddd 100644
 --- a/pt_config/lib/puppet/provider/pt_webserver_domain/weblogic_domain.rb
