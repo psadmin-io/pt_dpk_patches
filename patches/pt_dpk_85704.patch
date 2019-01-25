@@ -372,6 +372,19 @@ index 24c284f..e666a07 100644
            webprofile_settings_hash[key_profile_user]
            profile_user_pwd = webprofile_settings_hash[key_profile_pwd]
            if profile_user_pwd.match(/^(?=.*[\w]).{8,}$/).nil?
+diff --git a/pt_config/lib/puppet/type/pt_webserver_domain_boot.rb b/pt_config/lib/puppet/type/pt_webserver_domain_boot.rb
+index 712859f..5c3ae81 100644
+--- a/pt_config/lib/puppet/type/pt_webserver_domain_boot.rb
++++ b/pt_config/lib/puppet/type/pt_webserver_domain_boot.rb
+@@ -54,6 +54,8 @@ module Puppet
+     property :ensure
+     parameter :domain_name
+     parameter :os_user
++    parameter :service_user
++    parameter :service_pwd
+     parameter :ps_cfg_home_dir
+     parameter :webserver_settings
+ 
 diff --git a/pt_config/lib/puppet/type/shared/service_pwd.rb b/pt_config/lib/puppet/type/shared/service_pwd.rb
 new file mode 100644
 index 0000000..11d0eff
