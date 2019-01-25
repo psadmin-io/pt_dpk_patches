@@ -6,6 +6,13 @@ peoplesoft_base:  'E:\PSoft'
 
 dpk_location:     'E:\PSoft\dpk'
 archive_location: "%{hiera('dpk_location')}\\archives"
+archive_files:
+  weblogic:             "%{hiera('archive_location')}/pt-weblogic12.2.1.3.0.tgz"
+  tuxedo:               "%{hiera('archive_location')}/pt-tuxedo12.2.2.0.0.tgz"
+  jdk:                  "%{hiera('archive_location')}/pt-jdk1.8.0_171.tgz"
+  pshome:               "%{hiera('archive_location')}/pt-pshome8.56.10.tgz"
+  oracleclient:         "%{hiera('archive_location')}/pt-oracleclient12.1.0.2.tgz"
+  psapphome:            "%{hiera('archive_location')}/fscm-psapphome027.tgz"
 pt_location:      "%{hiera('peoplesoft_base')}\\pt"
 db_location:      "%{hiera('peoplesoft_base')}\\db"
 db_platform:      MSSQL
