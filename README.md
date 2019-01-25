@@ -4,7 +4,7 @@ This repository contains fixes and enhancements to Oracle's PeopleSoft DPK.
 ## Pre-Requisites
 
 ### Windows
-1. puppet-agent - [5.5.6+](http://downloads.puppetlabs.com/windows/puppet/)  
+1. puppet-agent - [5.5.6+](http://downloads.puppetlabs.com/windows/puppet5/)  
 2. puppet module - [acl](https://forge.puppet.com/puppetlabs/acl)  
  `puppet module install puppetlabs-acl --version 2.0.1 --confdir [dir]`
 3. puppet module - [inifile](https://forge.puppet.com/puppetlabs/inifile)  
@@ -25,6 +25,10 @@ This repository contains fixes and enhancements to Oracle's PeopleSoft DPK.
 * Registry support for domain services.
 * PIA XML/Property file support for modifications.
 * Custom file support to copy files to app/prcs/pia domain folders post-installation.
+* Multiple PS_CFG_HOME Support: In the providers, the $PS_CFG_HOME environment variable is set to support multiple configuration homes
+* Support for per-software middleware reployments using custom ::*_redeploy facts
+* Support for specifying archive files (enables centralizing on DFS)
+* Better WL Status checking
 
 ### Bug Fixes
 * Fixes WebLogic patch support for windows.
@@ -33,6 +37,18 @@ This repository contains fixes and enhancements to Oracle's PeopleSoft DPK.
 * Fixes various WebLogic install/uninstall issues.
 * Fixes Process Scheduler feature validation (change `KIOSK` to `PPM`)
 * Other minor cleanup/fixes.
+
+## Custom Facts
+
+**redeploy**
+
+This fact can be used as-is. The fact is built to always return `false` by design. To override the fact, you can specify an environment variable:
+
+```powershell
+PS C:\> $env:FACTER_weblogic_redeploy="true"
+```
+
+This will tell the DPK to redeploy the WebLogic DPK archive (uninstall, then re-install).
 
 ## How to apply DPK patch
 1. Copy pt_dpk_[version].patch to `/pt/dpk/puppet/production/modules/`

@@ -1,5 +1,5 @@
 diff --git a/pt_config/files/pt_appserver/appserver_win_service.rb.erb b/pt_config/files/pt_appserver/appserver_win_service.rb.erb
-index 8d29c2f..f1b98fa 100644
+index 8d29c2f..bc1d287 100644
 --- a/pt_config/files/pt_appserver/appserver_win_service.rb.erb
 +++ b/pt_config/files/pt_appserver/appserver_win_service.rb.erb
 @@ -1,4 +1,4 @@
@@ -8,26 +8,34 @@ index 8d29c2f..f1b98fa 100644
  begin
  
    require 'rubygems'
-@@ -15,7 +15,7 @@ begin
+@@ -15,7 +15,11 @@ begin
      end
  
      def service_main(*args)
 -      system("<%= ps_home %>/appserv/psadmin -c start -d <%= domain_name %>")
++      ENV["PS_APP_HOME"] = "<%= ps_app_home %>"
++      ENV["PS_HOME"] = "<%= ps_home %>"
++      ENV["PS_CFG_HOME"] = "<%= ps_cfg_home %>"
++      ENV["PS_CUST_HOME"] = "<%= ps_cust_home %>"
 +      system("<%= ps_home.gsub('\\', '/') %>/appserv/psadmin -c start -d <%= domain_name %>")
  
         # While we're in here the daemon is running.
         while running?
-@@ -31,7 +31,7 @@ begin
+@@ -31,7 +35,11 @@ begin
       def service_stop
         msg = 'Received stop signal at: ' + Time.now.to_s
         File.open(LOG_FILE, 'a'){ |f| f.puts msg }
 -       system("<%= ps_home %>/appserv/psadmin -c stop -d <%= domain_name %>")
++       ENV["PS_APP_HOME"] = "<%= ps_app_home %>"
++       ENV["PS_HOME"] = "<%= ps_home %>"
++       ENV["PS_CFG_HOME"] = "<%= ps_cfg_home %>"
++       ENV["PS_CUST_HOME"] = "<%= ps_cust_home %>"
 +       system("<%= ps_home.gsub('\\', '/') %>/appserv/psadmin -c stop -d <%= domain_name %>")
       end
  
       # This event triggers when the service receives a signal to pause.
 diff --git a/pt_config/files/pt_pia/pia_win_service.rb.erb b/pt_config/files/pt_pia/pia_win_service.rb.erb
-index 5dee9c4..d3665c8 100644
+index 5dee9c4..46bd65e 100644
 --- a/pt_config/files/pt_pia/pia_win_service.rb.erb
 +++ b/pt_config/files/pt_pia/pia_win_service.rb.erb
 @@ -1,4 +1,4 @@
@@ -36,26 +44,28 @@ index 5dee9c4..d3665c8 100644
  begin
  
    require 'rubygems'
-@@ -15,7 +15,7 @@ begin
+@@ -15,7 +15,8 @@ begin
      end
  
      def service_main(*args)
 -      system("<%= ps_cfg_home %>/webserv/<%= domain_name %>/bin/startPIA.cmd")
++      ENV["PS_CFG_HOME"] = "<%= ps_cfg_home %>"
 +      system("<%= ps_cfg_home.gsub('\\', '/') %>/webserv/<%= domain_name %>/bin/startPIA.cmd")
  
         # While we're in here the daemon is running.
         while running?
-@@ -31,7 +31,7 @@ begin
+@@ -31,7 +32,8 @@ begin
       def service_stop
         msg = 'Received stop signal at: ' + Time.now.to_s
         File.open(LOG_FILE, 'a'){ |f| f.puts msg }
 -       system("<%= ps_cfg_home %>/webserv/<%= domain_name %>/bin/stopPIA.cmd")
++       ENV["PS_CFG_HOME"] = "<%= ps_cfg_home %>"
 +       system("<%= ps_cfg_home.gsub('\\', '/') %>/webserv/<%= domain_name %>/bin/stopPIA.cmd")
       end
  
       # This event triggers when the service receives a signal to pause.
 diff --git a/pt_config/files/pt_prcs/prcs_win_service.rb.erb b/pt_config/files/pt_prcs/prcs_win_service.rb.erb
-index 30e87e2..6a20f5e 100644
+index 30e87e2..f8b3d28 100644
 --- a/pt_config/files/pt_prcs/prcs_win_service.rb.erb
 +++ b/pt_config/files/pt_prcs/prcs_win_service.rb.erb
 @@ -1,4 +1,4 @@
@@ -64,29 +74,72 @@ index 30e87e2..6a20f5e 100644
  begin
  
    require 'rubygems'
-@@ -15,7 +15,7 @@ begin
+@@ -15,7 +15,11 @@ begin
      end
  
      def service_main(*args)
 -      system("<%= ps_home %>/appserv/psadmin -p start -d <%= domain_name %>")
++      ENV["PS_APP_HOME"] = "<%= ps_app_home %>"
++      ENV["PS_HOME"] = "<%= ps_home %>"
++      ENV["PS_CFG_HOME"] = "<%= ps_cfg_home %>"
++      ENV["PS_CUST_HOME"] = "<%= ps_cust_home %>"
 +      system("<%= ps_home.gsub('\\', '/') %>/appserv/psadmin -p start -d <%= domain_name %>")
  
         # While we're in here the daemon is running.
         while running?
-@@ -31,7 +31,7 @@ begin
+@@ -31,7 +35,11 @@ begin
       def service_stop
         msg = 'Received stop signal at: ' + Time.now.to_s
         File.open(LOG_FILE, 'a'){ |f| f.puts msg }
 -       system("<%= ps_home %>/appserv/psadmin -p stop -d <%= domain_name %>")
++       ENV["PS_APP_HOME"] = "<%= ps_app_home %>"
++       ENV["PS_HOME"] = "<%= ps_home %>"
++       ENV["PS_CFG_HOME"] = "<%= ps_cfg_home %>"
++       ENV["PS_CUST_HOME"] = "<%= ps_cust_home %>"
 +       system("<%= ps_home.gsub('\\', '/') %>/appserv/psadmin -p stop -d <%= domain_name %>")
       end
  
       # This event triggers when the service receives a signal to pause.
 diff --git a/pt_config/lib/pt_comp_utils/webserver.rb b/pt_config/lib/pt_comp_utils/webserver.rb
-index 5953262..2c641e3 100644
+index 5953262..c3fcc8c 100644
 --- a/pt_config/lib/pt_comp_utils/webserver.rb
 +++ b/pt_config/lib/pt_comp_utils/webserver.rb
-@@ -300,6 +300,7 @@ module PtCompUtils
+@@ -212,6 +212,7 @@ module PtCompUtils
+         cmd_suffix = ''
+         classpath = "%CLASSPATH%"
+         path_separator = ';'
++        shell_suffix = 'cmd'
+       elsif Facter.value(:kernel) == 'AIX' or 
+             Facter.value(:osfamily) == 'Solaris' or
+             Facter.value(:osfamily) == 'HP-UX'
+@@ -223,6 +224,7 @@ module PtCompUtils
+         cmd_suffix = "\""
+         classpath = "$CLASSPATH"
+         path_separator = ':'
++        shell_suffix = 'sh'
+       else
+         if Puppet.features.root?
+         cmd_prefix = "su - #{os_user} -p -c \""
+@@ -232,6 +234,7 @@ module PtCompUtils
+         cmd_suffix = "\""
+         classpath = "$CLASSPATH"
+         path_separator = ':'
++        shell_suffix = 'sh'
+       end
+ 
+       # setup weblogic environment
+@@ -241,8 +244,8 @@ module PtCompUtils
+       ENV['CLASSPATH'] = ".#{path_separator}#{wl_jar_file}"
+ 
+       java_opts = "-Dwlst.offline.log=#{wlst_log_file} -cp #{classpath}"
+-      wl_status_cmd = "#{cmd_prefix} java #{java_opts} weblogic.WLST " + \
+-                    "-skipWLSModuleScanning #{wl_script_file} #{cmd_suffix}"
++      wlst_cmd = File.join(bea_home, 'oracle_common', 'common', 'bin', "wlst.#{shell_suffix}")
++      wl_status_cmd = "#{cmd_prefix} #{wlst_cmd} #{wl_script_file} #{cmd_suffix}"
+ 
+       Puppet.debug("WLST status command: #{wl_status_cmd}")
+ 
+@@ -300,6 +303,7 @@ module PtCompUtils
        count = 1
        status = 'UNKNOWN'
        while status != 'RUNNING'
@@ -128,19 +181,21 @@ index 368f649..6b3aa38 100644
      if File.exist?(domain_dir)
        Puppet.debug("Removing Application Server domain directory: #{domain_dir}")
 diff --git a/pt_config/lib/puppet/provider/pt_appserver_domain_boot/appserver_domain_boot.rb b/pt_config/lib/puppet/provider/pt_appserver_domain_boot/appserver_domain_boot.rb
-index 1f2fad7..4aac9a6 100644
+index 1f2fad7..d68fc88 100644
 --- a/pt_config/lib/puppet/provider/pt_appserver_domain_boot/appserver_domain_boot.rb
 +++ b/pt_config/lib/puppet/provider/pt_appserver_domain_boot/appserver_domain_boot.rb
-@@ -72,6 +72,8 @@ Puppet::Type.type(:pt_appserver_domain_boot).provide :appserver_domain_boot,
+@@ -72,6 +72,10 @@ Puppet::Type.type(:pt_appserver_domain_boot).provide :appserver_domain_boot,
        domain_name = resource[:domain_name]
        ps_cfg_home = resource[:ps_cfg_home_dir]
        ps_home     = resource[:ps_home_dir]
++      ps_app_home = resource[:ps_app_home_dir]
++      ps_cust_home = resource[:ps_cust_home_dir]
 +      service_user = resource[:service_user]
 +      service_pwd  = resource[:service_pwd]
  
        appserver_win_service_file = File.join(ps_cfg_home, 'appserv', domain_name, "appserver_win_service.rb")
        appserver_win_service_content = template('puppet:///modules/pt_config/pt_appserver/appserver_win_service.rb.erb',
-@@ -102,7 +104,9 @@ Puppet::Type.type(:pt_appserver_domain_boot).provide :appserver_domain_boot,
+@@ -102,7 +106,9 @@ Puppet::Type.type(:pt_appserver_domain_boot).provide :appserver_domain_boot,
            :binary_path_name => "#{ruby_executable.chomp} #{appserver_win_service_file}",
            :load_order_group => 'Network',
            :dependencies     => nil,
@@ -152,19 +207,21 @@ index 1f2fad7..4aac9a6 100644
        rescue Exception => e
          if (e.message.include?('The specified service already exists') ||
 diff --git a/pt_config/lib/puppet/provider/pt_prcs_domain_boot/prcs_domain_boot.rb b/pt_config/lib/puppet/provider/pt_prcs_domain_boot/prcs_domain_boot.rb
-index 7868399..71f2cc1 100644
+index 7868399..ef1b72e 100644
 --- a/pt_config/lib/puppet/provider/pt_prcs_domain_boot/prcs_domain_boot.rb
 +++ b/pt_config/lib/puppet/provider/pt_prcs_domain_boot/prcs_domain_boot.rb
-@@ -67,6 +67,8 @@ Puppet::Type.type(:pt_prcs_domain_boot).provide :prcs_domain_boot,
+@@ -67,6 +67,10 @@ Puppet::Type.type(:pt_prcs_domain_boot).provide :prcs_domain_boot,
        domain_name = resource[:domain_name]
        ps_cfg_home = resource[:ps_cfg_home_dir]
        ps_home     = resource[:ps_home_dir]
++      ps_app_home = resource[:ps_app_home_dir]
++      ps_cust_home = resource[:ps_cust_home_dir]
 +      service_user = resource[:service_user]
 +      service_pwd  = resource[:service_pwd]
  
        prcs_win_service_file = File.join(ps_cfg_home, 'appserv', 'prcs', domain_name, "prcs_win_service.rb")
        prcs_win_service_content = template('puppet:///modules/pt_config/pt_prcs/prcs_win_service.rb.erb',
-@@ -97,7 +99,9 @@ Puppet::Type.type(:pt_prcs_domain_boot).provide :prcs_domain_boot,
+@@ -97,7 +101,9 @@ Puppet::Type.type(:pt_prcs_domain_boot).provide :prcs_domain_boot,
            :binary_path_name => "#{ruby_executable.chomp} #{prcs_win_service_file}",
            :load_order_group => 'Network',
            :dependencies     => nil,
@@ -270,6 +327,33 @@ index 131549b..495bb69 100644
          })
        rescue Exception => e
          if (e.message.include?('The specified service already exists') ||
+diff --git a/pt_config/lib/puppet/type/pt_acm_plugin.rb b/pt_config/lib/puppet/type/pt_acm_plugin.rb
+index 971275a..6229958 100644
+--- a/pt_config/lib/puppet/type/pt_acm_plugin.rb
++++ b/pt_config/lib/puppet/type/pt_acm_plugin.rb
+@@ -71,13 +71,15 @@ module Puppet
+             raise ArgumentError, "Properties name/value pairs must be " +
+                                  "separated by an ="
+           else
+-            prop.split(', ').each do |prop_item|
+-              if ['pwd', 'pass'].any? {|var| prop_item.split('=')[0].include? var}
+-                Puppet.debug("Got the property: #{prop_item.gsub(prop_item.split('=')[1], '*****')}")
+-              else
+-                Puppet.debug("Got the property: #{prop_item}")
+-              end
+-            end
++            # DJI - 6/6/18 - .include? was causing errors when trying to hide passwords
++            #  The provider acm_plugin.rb will runs the same code
++            #prop.split(', ').each do |prop_item|
++            #  if ['pwd', 'pass'].any? {|var| prop_item.split('=')[0].include? var}
++            #    Puppet.debug("Got the property: #{prop_item.gsub(prop_item.split('=')[1], '*****')}")
++            #  else
++            #    Puppet.debug("Got the property: #{prop_item}")
++            #  end
++            #end
+           end
+         end
+       end
 diff --git a/pt_config/lib/puppet/type/pt_appserver_domain.rb b/pt_config/lib/puppet/type/pt_appserver_domain.rb
 index bb6d941..43e0a0c 100644
 --- a/pt_config/lib/puppet/type/pt_appserver_domain.rb
@@ -295,18 +379,20 @@ index bb6d941..43e0a0c 100644
      end
  
 diff --git a/pt_config/lib/puppet/type/pt_appserver_domain_boot.rb b/pt_config/lib/puppet/type/pt_appserver_domain_boot.rb
-index 8112e58..06b184a 100644
+index 8112e58..c9d6c7f 100644
 --- a/pt_config/lib/puppet/type/pt_appserver_domain_boot.rb
 +++ b/pt_config/lib/puppet/type/pt_appserver_domain_boot.rb
-@@ -46,6 +46,8 @@ module Puppet
-     property :ensure
-     parameter :domain_name
+@@ -48,6 +48,10 @@ module Puppet
      parameter :os_user
-+    parameter :service_user
-+    parameter :service_pwd
      parameter :ps_home_dir
      parameter :ps_cfg_home_dir
++    parameter :ps_app_home_dir
++    parameter :ps_cust_home_dir
++    parameter :service_user
++    parameter :service_pwd
  
+     # Basically just a synonym for restarting.  Used to respond
+     # to events.
 diff --git a/pt_config/lib/puppet/type/pt_prcs_domain.rb b/pt_config/lib/puppet/type/pt_prcs_domain.rb
 index 93cca7a..9f0ce93 100644
 --- a/pt_config/lib/puppet/type/pt_prcs_domain.rb
@@ -321,18 +407,20 @@ index 93cca7a..9f0ce93 100644
          value = [value] unless value.is_a? Array
  
 diff --git a/pt_config/lib/puppet/type/pt_prcs_domain_boot.rb b/pt_config/lib/puppet/type/pt_prcs_domain_boot.rb
-index b25185f..a87744e 100644
+index b25185f..041b2a0 100644
 --- a/pt_config/lib/puppet/type/pt_prcs_domain_boot.rb
 +++ b/pt_config/lib/puppet/type/pt_prcs_domain_boot.rb
-@@ -46,6 +46,8 @@ module Puppet
-     property :ensure
-     parameter :domain_name
+@@ -48,6 +48,10 @@ module Puppet
      parameter :os_user
-+    parameter :service_user
-+    parameter :service_pwd
      parameter :ps_home_dir
      parameter :ps_cfg_home_dir
++    parameter :ps_app_home_dir
++    parameter :ps_cust_home_dir
++    parameter :service_user
++    parameter :service_pwd
  
+     # Basically just a synonym for restarting.  Used to respond
+     # to events.
 diff --git a/pt_config/lib/puppet/type/pt_webserver_domain.rb b/pt_config/lib/puppet/type/pt_webserver_domain.rb
 index 24c284f..e666a07 100644
 --- a/pt_config/lib/puppet/type/pt_webserver_domain.rb
@@ -779,7 +867,7 @@ index c06ab3d..2114eb7 100644
        if ($::kernel == 'Linux') or ($::kernel == 'DISABLEAIX') {
  
 diff --git a/pt_profile/manifests/pt_domain_boot.pp b/pt_profile/manifests/pt_domain_boot.pp
-index 16694ab..37c1c26 100644
+index 16694ab..f200f38 100644
 --- a/pt_profile/manifests/pt_domain_boot.pp
 +++ b/pt_profile/manifests/pt_domain_boot.pp
 @@ -40,11 +40,15 @@ class pt_profile::pt_domain_boot {
@@ -803,10 +891,13 @@ index 16694ab..37c1c26 100644
    if ($::osfamily == 'windows') and ($env_type == 'fulltier') {
      $oracleserver_hiera    = hiera('oracle_server')
      $oracle_listener_name = $oracleserver_hiera['listener_name']
-@@ -73,11 +77,25 @@ class pt_profile::pt_domain_boot {
+@@ -72,12 +76,29 @@ class pt_profile::pt_domain_boot {
+ 
        $os_user          = $appserver_domain_info['os_user']
        $ps_cfg_home_dir  = $appserver_domain_info['ps_cfg_home_dir']
- 
+-
++      $ps_cust_home_dir = $appserver_domain_info['ps_cust_home_dir']
++
 +      if $ensure == present and $appserver_service_user != undef {
 +        acl { 'appserver_service_permission' :
 +          target      => $ps_cfg_home_dir,
@@ -821,18 +912,23 @@ index 16694ab..37c1c26 100644
 +      }
        pt_appserver_domain_boot { $app_domain_name:
          ensure           => $domain_action,
++        ps_app_home_dir  => $psapphome_location,
          ps_home_dir      => $pshome_location,
          ps_cfg_home_dir  => $ps_cfg_home_dir,
++        ps_cust_home_dir => $ps_cust_home_dir,
          os_user          => $os_user,
 +        service_user     => $appserver_service_user,
 +        service_pwd      => $appserver_service_pwd,
        }
        if ($::osfamily == 'windows') and ($env_type == 'fulltier') {
          $appserver_domain_service = "PsftAppServerDomain${app_domain_name}Service"
-@@ -99,11 +117,25 @@ class pt_profile::pt_domain_boot {
+@@ -98,12 +119,29 @@ class pt_profile::pt_domain_boot {
+ 
        $os_user          = $prcs_domain_info['os_user']
        $ps_cfg_home_dir  = $prcs_domain_info['ps_cfg_home_dir']
- 
+-
++      $ps_cust_home_dir = $prcs_domain_info['ps_cust_home_dir']
++
 +      if $ensure == present and $prcs_service_user != undef {
 +        acl { 'prcs_service_permission' :
 +          target      => $ps_cfg_home_dir,
@@ -847,15 +943,17 @@ index 16694ab..37c1c26 100644
 +      }
        pt_prcs_domain_boot { $prcs_domain_name:
          ensure           => $domain_action,
++        ps_app_home_dir  => $psapphome_location,
          ps_home_dir      => $pshome_location,
          ps_cfg_home_dir  => $ps_cfg_home_dir,
++        ps_cust_home_dir => $ps_cust_home_dir,
          os_user          => $os_user,
 +        service_user     => $prcs_service_user,
 +        service_pwd      => $prcs_service_pwd,
        }
        if ($::osfamily == 'windows') and ($env_type == 'fulltier') {
          $prcs_domain_service = "PsftPrcsDomain${prcs_domain_name}Service"
-@@ -129,10 +161,23 @@ class pt_profile::pt_domain_boot {
+@@ -129,10 +167,23 @@ class pt_profile::pt_domain_boot {
        validate_hash($webserver_settings)
        $webserver_settings_array  = join_keys_to_values($webserver_settings, '=')
  
@@ -1048,7 +1146,7 @@ index 1f50450..2fc3bf2 100644
        $cobol_hiera        = hiera('cobol', '')
        if ($cobol_hiera) and ($cobol_hiera != '') {
 diff --git a/pt_profile/manifests/pt_tools_deployment.pp b/pt_profile/manifests/pt_tools_deployment.pp
-index 6406f4a..dff0f01 100644
+index 6406f4a..081179b 100644
 --- a/pt_profile/manifests/pt_tools_deployment.pp
 +++ b/pt_profile/manifests/pt_tools_deployment.pp
 @@ -23,6 +23,7 @@ class pt_profile::pt_tools_deployment {
@@ -1090,7 +1188,7 @@ index 6406f4a..dff0f01 100644
    notice ("PS Home remove is ${pshome_remove}")
  
    if $deploy_pshome_only == false {
-@@ -84,63 +88,36 @@ class pt_profile::pt_tools_deployment {
+@@ -84,65 +88,45 @@ class pt_profile::pt_tools_deployment {
        if $db_platform == 'ORACLE' {
          $oracleclient_hiera    = hiera('oracle_client')
          $oracleclient_location = $oracleclient_hiera['location']
@@ -1161,16 +1259,151 @@ index 6406f4a..dff0f01 100644
 +      $ohs_remove = undef
 +    }
    }
-   $redeploy = hiera('redeploy', false)
+-  $redeploy = hiera('redeploy', false)
++  $redeploy               = hiera('redeploy', false)
++  $pshome_redeploy        = hiera('pshome_redeploy', false)
++  $oracleclient_redeploy  = hiera('oracleclient_redeploy', false)
++  $jdk_redeploy           = hiera('jdk_redeploy', false)
++  $weblogic_redeploy      = hiera('weblogic_redeploy', false)
++  $tuxedo_redeploy        = hiera('tuxedo_redeploy', false)
++  $ohs_redeploy           = hiera('ohs_redeploy', false)
++
    class { '::pt_setup::tools_deployment':
+     ensure                 => $ensure,
+     deploy_pshome_only     => $deploy_pshome_only,
+@@ -154,17 +138,23 @@ class pt_profile::pt_tools_deployment {
+     db_type                => $db_type,
+     pshome_location        => $pshome_location,
+     pshome_remove          => $pshome_remove,
++    pshome_redeploy        => $pshome_redeploy,
+     inventory_location     => $inventory_location,
+     oracleclient_location  => $oracleclient_location,
+     oracleclient_remove    => $oracleclient_remove,
++    oracleclient_redeploy  => $oracleclient_redeploy,
+     jdk_location           => $jdk_location,
+     jdk_remove             => $jdk_remove,
++    jdk_redeploy           => $jdk_redeploy,
+     weblogic_location      => $weblogic_location,
+     weblogic_remove        => $weblogic_remove,
++    weblogic_redeploy      => $weblogic_redeploy,
+     tuxedo_location        => $tuxedo_location,
+     tuxedo_remove          => $tuxedo_remove,
++    tuxedo_redeploy        => $tuxedo_redeploy,
+     ohs_location           => $ohs_location,
+     ohs_remove             => $ohs_remove,
++    ohs_redeploy           => $ohs_redeploy,
+     redeploy               => $redeploy,
+   }
+   contain ::pt_setup::tools_deployment
+diff --git a/pt_role/lib/facter/redeploy.rb b/pt_role/lib/facter/redeploy.rb
+new file mode 100644
+index 0000000..dbe08ae
+--- /dev/null
++++ b/pt_role/lib/facter/redeploy.rb
+@@ -0,0 +1,41 @@
++Facter.add(:redeploy) do
++  setcode do
++    'false'
++  end
++end
++
++Facter.add(:pshome_redeploy) do
++  setcode do
++    'false'
++  end
++end
++
++Facter.add(:oracleclient_redeploy) do
++  setcode do
++    'false'
++  end
++end
++
++Facter.add(:jdk_redeploy) do
++  setcode do
++    'false'
++  end
++end
++
++Facter.add(:weblogic_redeploy) do
++  setcode do
++    'false'
++  end
++end
++
++Facter.add(:tuxedo_redeploy) do
++  setcode do
++    'false'
++  end
++end
++
++Facter.add(:ohs_redeploy) do
++  setcode do
++    'false'
++  end
++end
+\ No newline at end of file
+diff --git a/pt_setup/manifests/app_deployment.pp b/pt_setup/manifests/app_deployment.pp
+index 5bed44c..9fe946b 100644
+--- a/pt_setup/manifests/app_deployment.pp
++++ b/pt_setup/manifests/app_deployment.pp
+@@ -47,14 +47,20 @@ class pt_setup::app_deployment (
+       realize ( ::File[$pt_location] )
+ 
+       # retrieve the archives for each App component
+-    $ps_apphome_archive_file = get_matched_file($app_archive_location, $ps_apphome_tag)
++      $archive_files = hiera('archive_files', '')
++      if $archive_files {
++        $ps_apphome_archive_file = $archive_files[$ps_apphome_tag]
++      } 
++      if $ps_apphome_archive_file == '' {
++        $ps_apphome_archive_file = get_matched_file($app_archive_location, $ps_apphome_tag)
++      }
+       if $ps_apphome_archive_file == '' {
+         fail("Unable to locate archive (tgz) file for PS_APP_HOME in ${app_archive_location}")
+       }
+     }
+     $ps_apphome_hiera = hiera('ps_app_home')
+-  $ps_apphome_extract_only_hiera = $ps_apphome_hiera['extract_only']
+-  $apphome_extract_only = str2bool($ps_apphome_extract_only_hiera)
++    $ps_apphome_extract_only_hiera = $ps_apphome_hiera['extract_only']
++    $apphome_extract_only = str2bool($ps_apphome_extract_only_hiera)
+ 
+     notice ("PS Application Home extract only flag: ${apphome_extract_only}")
+     $apphome_patches = hiera('apphome_patches', '')
 diff --git a/pt_setup/manifests/tools_deployment.pp b/pt_setup/manifests/tools_deployment.pp
-index a24a324..5ec81f7 100644
+index a24a324..794021b 100644
 --- a/pt_setup/manifests/tools_deployment.pp
 +++ b/pt_setup/manifests/tools_deployment.pp
-@@ -51,6 +51,15 @@ class pt_setup::tools_deployment (
+@@ -29,17 +29,23 @@ class pt_setup::tools_deployment (
+   $db_type                = undef,
+   $pshome_location        = undef,
+   $pshome_remove          = true,
++  $pshome_redeploy        = false,
+   $inventory_location     = undef,
+   $oracleclient_location  = undef,
+   $oracleclient_remove    = true,
++  $oracleclient_redeploy  = false,
+   $jdk_location           = undef,
+   $jdk_remove             = true,
++  $jdk_redeploy           = false,
+   $weblogic_location      = undef,
+   $weblogic_remove        = true,
++  $weblogic_redeploy      = false,
+   $tuxedo_location        = undef,
+   $tuxedo_remove          = true,
++  $tuxedo_redeploy        = false,
+   $ohs_location           = undef,
+   $ohs_remove             = true,
++  $ohs_redeploy           = false,
+   $redeploy               = false,
+ ) {
+     notice ("Applying pt_setup::tools_deployment")
+@@ -51,6 +57,16 @@ class pt_setup::tools_deployment (
      $oracleclient_tag = 'oracleclient'
      $ohs_tag          = 'ohs'
      $cobol_tag        = 'cobol'
++    $archive_files = hiera('archive_files', '')
 +    $domain_type      = hiera('domain_type')
 +    $appserver_service_user = hiera('appserver_service_user', undef)
 +    $appserver_service_pwd  = hiera('appserver_service_pwd', undef)
@@ -1183,7 +1416,59 @@ index a24a324..5ec81f7 100644
  
      if $ensure == present {
        $pt_location = hiera('pt_location')
-@@ -89,6 +98,11 @@ class pt_setup::tools_deployment (
+@@ -64,7 +80,13 @@ class pt_setup::tools_deployment (
+       realize ( ::File[$db_location] )
+ 
+       # retrieve the archives for each Tools component
+-      $pshome_archive_file = get_matched_file($tools_archive_location, $pshome_tag)
++
++      if $archive_files {
++        $pshome_archive_file   = $archive_files[$pshome_tag]
++      } 
++      if $pshome_archive_file == '' {
++      	$pshome_archive_file = get_matched_file($tools_archive_location, $pshome_tag)
++      }
+       if $pshome_archive_file == '' {
+         fail("Unable to locate archive (tgz) file for PS_HOME in ${tools_archive_location}")
+       }
+@@ -72,30 +94,56 @@ class pt_setup::tools_deployment (
+     if $deploy_pshome_only == false {
+       if $ensure == present {
+         if ($::kernel != 'AIX' and $::kernel != 'HP-UX') {
+-          $jdk_archive_file = get_matched_file($tools_archive_location, $jdk_tag)
++          if $archive_files {
++            $jdk_archive_file   = $archive_files[$jdk_tag]
++          } 
++          if $jdk_archive_file == '' {
++            $jdk_archive_file   = get_matched_file($tools_archive_location, $jdk_tag)
++          }
+           if $jdk_archive_file == '' {
+             fail("Unable to locate archive (tgz) file for JDK in ${tools_archive_location}")
+           }
+         }
+-        
+-        $weblogic_archive_file = get_matched_file($tools_archive_location,
++		
++        if $archive_files {
++          $weblogic_archive_file   = $archive_files[$weblogic_tag]
++        } 
++        if $weblogic_archive_file == '' {
++          $weblogic_archive_file = get_matched_file($tools_archive_location,
+                                                 $weblogic_tag)
++        }
+         if $weblogic_archive_file == '' {
+           fail("Unable to locate archive (tgz) file for Weblogic in ${tools_archive_location}")
+         }
+-        $tuxedo_archive_file   = get_matched_file($tools_archive_location,
++
++        if $archive_files {
++          $tuxedo_archive_file   = $archive_files[$tuxedo_tag]
++        }
++        if $tuxedo_archive_file == '' {
++          $tuxedo_archive_file   = get_matched_file($tools_archive_location,
+                                                 $tuxedo_tag)
++        }
+         if $tuxedo_archive_file == '' {
            fail("Unable to locate archive (tgz) file for Tuxedo in ${tools_archive_location}")
          }
        }
@@ -1195,7 +1480,78 @@ index a24a324..5ec81f7 100644
        $db_platform = hiera('db_platform')
        if ($oracleclient_location) and ($db_platform == 'ORACLE') {
          $deploy_oracleclient = true
-@@ -188,20 +202,63 @@ class pt_setup::tools_deployment (
+ 
+         if $ensure == present {
+-          $oracleclient_archive_file = get_matched_file($tools_archive_location,
++          if $archive_files {
++            $oracleclient_archive_file   = $archive_files[$oracleclient_tag]
++          } 
++          if $oracleclient_archive_file == '' {
++            $oracleclient_archive_file = get_matched_file($tools_archive_location,
+                                                       $oracleclient_tag)
++          }
+           if $oracleclient_archive_file == '' {
+             fail("Unable to locate archive (tgz) file for Oracle Client in ${tools_archive_location}")
+           }
+@@ -109,6 +157,11 @@ class pt_setup::tools_deployment (
+           notice ("Oracle Client patches do NOT exist")
+           $oracleclient_patches_list = undef
+         }
++        if ($redeploy == 'true') or ($oracleclient_redeploy == 'true') {
++          $oc_redeploy = true
++        } else {
++          $oc_redeploy = false
++        }
+         pt_deploy_oracleclient { $oracleclient_tag:
+           ensure                    => $ensure,
+           deploy_user               => $oracle_install_user,
+@@ -118,7 +171,7 @@ class pt_setup::tools_deployment (
+           oracle_inventory_location => $inventory_location,
+           oracle_inventory_user     => $oracle_install_user,
+           oracle_inventory_group    => $oracle_install_group,
+-          redeploy                  => $redeploy,
++          redeploy                  => $oc_redeploy,
+           remove                    => $oracleclient_remove,
+           patch_list                => $oracleclient_patches_list,
+         }
+@@ -146,6 +199,11 @@ class pt_setup::tools_deployment (
+       $tools_patches_list = undef
+     }
+ 
++    if ($redeploy == 'true') or ($pshome_redeploy == 'true') {
++      $pt_redeploy = true
++    } else {
++      $pt_redeploy = false
++    }
+     # deploy each Tools component
+     pt_deploy_pshome { $pshome_tag:
+       ensure            => $ensure,
+@@ -156,7 +214,7 @@ class pt_setup::tools_deployment (
+       deploy_location   => $pshome_location,
+       extract_only      => $extract_only,
+       unicode_db        => $unicode_db,
+-      redeploy          => $redeploy,
++      redeploy          => $pt_redeploy,
+       remove            => $pshome_remove,
+       patch_list        => $tools_patches_list,
+     }
+@@ -178,30 +236,83 @@ class pt_setup::tools_deployment (
+           $jdk_patches_list = undef
+         }
+ 
++        if ($redeploy == 'true') or ($jdk_redeploy == 'true') {
++          $java_redeploy = true
++        } else {
++          $java_redeploy = false
++        }
+         pt_deploy_jdk { $jdk_tag:
+           ensure            => $ensure,
+           deploy_user       => $tools_install_user,
+           deploy_user_group => $tools_install_group,
+           archive_file      => $jdk_archive_file,
+           deploy_location   => $jdk_location,
+-          redeploy          => $redeploy,
++          redeploy          => $java_redeploy,
            remove            => $jdk_remove,
            patch_list        => $jdk_patches_list,
          }
@@ -1259,6 +1615,11 @@ index a24a324..5ec81f7 100644
 -        notice ("Weblogic patches do NOT exist")
 -        $weblogic_patches_list = undef
 +        $weblogic_ensure = absent
++      }
++      if ($redeploy == 'true') or ($weblogic_redeploy == 'true') {
++        $wl_redeploy = true
++      } else {
++        $wl_redeploy = false
        }
        pt_deploy_weblogic { $weblogic_tag:
 -        ensure                    => $ensure,
@@ -1266,7 +1627,14 @@ index a24a324..5ec81f7 100644
          deploy_user               => $tools_install_user,
          deploy_user_group         => $tools_install_group,
          archive_file              => $weblogic_archive_file,
-@@ -216,17 +273,35 @@ class pt_setup::tools_deployment (
+@@ -210,23 +321,46 @@ class pt_setup::tools_deployment (
+         oracle_inventory_user     => $oracle_install_user,
+         oracle_inventory_group    => $oracle_install_group,
+         jdk_location              => $jdk_location,
+-        redeploy                  => $redeploy,
++        redeploy                  => $wl_redeploy,
+         remove                    => $weblogic_remove,
+         patch_list                => $weblogic_patches_list,
        }
  
        # ### Tuxedo ###
@@ -1302,6 +1670,11 @@ index a24a324..5ec81f7 100644
 -        notice ("Tuxedo patches do NOT exist")
 -        $tuxedo_patches_list = undef
 +        $tuxedo_ensure = absent
++      }
++      if ($redeploy == 'true') or ($tuxedo_redeploy == 'true') {
++        $tux_redeploy = true
++      } else {
++        $tux_redeploy = false
        }
        pt_deploy_tuxedo { $tuxedo_tag:
 -        ensure                    => $ensure,
@@ -1309,7 +1682,12 @@ index a24a324..5ec81f7 100644
          deploy_user               => $tools_install_user,
          deploy_user_group         => $tools_install_group,
          archive_file              => $tuxedo_archive_file,
-@@ -238,6 +313,19 @@ class pt_setup::tools_deployment (
+@@ -234,10 +368,23 @@ class pt_setup::tools_deployment (
+         oracle_inventory_location => $inventory_location,
+         oracle_inventory_user     => $oracle_install_user,
+         oracle_inventory_group    => $oracle_install_group,
+-        redeploy                  => $redeploy,
++        redeploy                  => $tux_redeploy,
          remove                    => $tuxedo_remove,
          patch_list                => $tuxedo_patches_list,
          jdk_location              => $jdk_location,
@@ -1329,3 +1707,24 @@ index a24a324..5ec81f7 100644
        }
  
        # ### Oracle HTTP Server ###
+@@ -251,6 +398,11 @@ class pt_setup::tools_deployment (
+             fail("Unable to locate archive (tgz) file for OHS in ${tools_archive_location}")
+           }
+         }
++        if ($redeploy == 'true') or ($ohs_redeploy == 'true') {
++          $http_redeploy = true
++        } else {
++          $http_redeploy = false
++        }
+         pt_deploy_ohs { $ohs_tag:
+           ensure                    => $ensure,
+           deploy_user               => $tools_install_user,
+@@ -261,7 +413,7 @@ class pt_setup::tools_deployment (
+           oracle_inventory_user     => $oracle_install_user,
+           oracle_inventory_group    => $oracle_install_group,
+           jdk_location              => $jdk_location,
+-          redeploy                  => $redeploy,
++          redeploy                  => $http_redeploy,
+           remove                    => $ohs_remove,
+         }
+       }
