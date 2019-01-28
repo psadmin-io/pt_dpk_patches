@@ -1,0 +1,1855 @@
+diff --git a/pt_config/files/pt_appserver/appserver_win_service.rb.erb b/pt_config/files/pt_appserver/appserver_win_service.rb.erb
+index 8d29c2f..bc1d287 100644
+--- a/pt_config/files/pt_appserver/appserver_win_service.rb.erb
++++ b/pt_config/files/pt_appserver/appserver_win_service.rb.erb
+@@ -1,4 +1,4 @@
+-LOG_FILE = "<%= ps_cfg_home %>/appserv/<%= domain_name %>/appserver_win_service.log"
++LOG_FILE = "<%= ps_cfg_home.gsub('\\', '/') %>/appserv/<%= domain_name %>/appserver_win_service.log"
+ begin
+ 
+   require 'rubygems'
+@@ -15,7 +15,11 @@ begin
+     end
+ 
+     def service_main(*args)
+-      system("<%= ps_home %>/appserv/psadmin -c start -d <%= domain_name %>")
++      ENV["PS_APP_HOME"] = "<%= ps_app_home %>"
++      ENV["PS_HOME"] = "<%= ps_home %>"
++      ENV["PS_CFG_HOME"] = "<%= ps_cfg_home %>"
++      ENV["PS_CUST_HOME"] = "<%= ps_cust_home %>"
++      system("<%= ps_home.gsub('\\', '/') %>/appserv/psadmin -c start -d <%= domain_name %>")
+ 
+        # While we're in here the daemon is running.
+        while running?
+@@ -31,7 +35,11 @@ begin
+      def service_stop
+        msg = 'Received stop signal at: ' + Time.now.to_s
+        File.open(LOG_FILE, 'a'){ |f| f.puts msg }
+-       system("<%= ps_home %>/appserv/psadmin -c stop -d <%= domain_name %>")
++       ENV["PS_APP_HOME"] = "<%= ps_app_home %>"
++       ENV["PS_HOME"] = "<%= ps_home %>"
++       ENV["PS_CFG_HOME"] = "<%= ps_cfg_home %>"
++       ENV["PS_CUST_HOME"] = "<%= ps_cust_home %>"
++       system("<%= ps_home.gsub('\\', '/') %>/appserv/psadmin -c stop -d <%= domain_name %>")
+      end
+ 
+      # This event triggers when the service receives a signal to pause.
+diff --git a/pt_config/files/pt_pia/pia_win_service.rb.erb b/pt_config/files/pt_pia/pia_win_service.rb.erb
+index 5dee9c4..46bd65e 100644
+--- a/pt_config/files/pt_pia/pia_win_service.rb.erb
++++ b/pt_config/files/pt_pia/pia_win_service.rb.erb
+@@ -1,4 +1,4 @@
+-LOG_FILE = "<%= ps_cfg_home %>/webserv/<%= domain_name %>/pia_win_service.log"
++LOG_FILE = "<%= ps_cfg_home.gsub('\\', '/') %>/webserv/<%= domain_name %>/pia_win_service.log"
+ begin
+ 
+   require 'rubygems'
+@@ -15,7 +15,8 @@ begin
+     end
+ 
+     def service_main(*args)
+-      system("<%= ps_cfg_home %>/webserv/<%= domain_name %>/bin/startPIA.cmd")
++      ENV["PS_CFG_HOME"] = "<%= ps_cfg_home %>"
++      system("<%= ps_cfg_home.gsub('\\', '/') %>/webserv/<%= domain_name %>/bin/startPIA.cmd")
+ 
+        # While we're in here the daemon is running.
+        while running?
+@@ -31,7 +32,8 @@ begin
+      def service_stop
+        msg = 'Received stop signal at: ' + Time.now.to_s
+        File.open(LOG_FILE, 'a'){ |f| f.puts msg }
+-       system("<%= ps_cfg_home %>/webserv/<%= domain_name %>/bin/stopPIA.cmd")
++       ENV["PS_CFG_HOME"] = "<%= ps_cfg_home %>"
++       system("<%= ps_cfg_home.gsub('\\', '/') %>/webserv/<%= domain_name %>/bin/stopPIA.cmd")
+      end
+ 
+      # This event triggers when the service receives a signal to pause.
+diff --git a/pt_config/files/pt_prcs/prcs_win_service.rb.erb b/pt_config/files/pt_prcs/prcs_win_service.rb.erb
+index 30e87e2..f8b3d28 100644
+--- a/pt_config/files/pt_prcs/prcs_win_service.rb.erb
++++ b/pt_config/files/pt_prcs/prcs_win_service.rb.erb
+@@ -1,4 +1,4 @@
+-LOG_FILE = "<%= ps_cfg_home %>/appserv/prcs/<%= domain_name %>/prcs_win_service.log"
++LOG_FILE = "<%= ps_cfg_home.gsub('\\', '/') %>/appserv/prcs/<%= domain_name %>/prcs_win_service.log"
+ begin
+ 
+   require 'rubygems'
+@@ -15,7 +15,11 @@ begin
+     end
+ 
+     def service_main(*args)
+-      system("<%= ps_home %>/appserv/psadmin -p start -d <%= domain_name %>")
++      ENV["PS_APP_HOME"] = "<%= ps_app_home %>"
++      ENV["PS_HOME"] = "<%= ps_home %>"
++      ENV["PS_CFG_HOME"] = "<%= ps_cfg_home %>"
++      ENV["PS_CUST_HOME"] = "<%= ps_cust_home %>"
++      system("<%= ps_home.gsub('\\', '/') %>/appserv/psadmin -p start -d <%= domain_name %>")
+ 
+        # While we're in here the daemon is running.
+        while running?
+@@ -31,7 +35,11 @@ begin
+      def service_stop
+        msg = 'Received stop signal at: ' + Time.now.to_s
+        File.open(LOG_FILE, 'a'){ |f| f.puts msg }
+-       system("<%= ps_home %>/appserv/psadmin -p stop -d <%= domain_name %>")
++       ENV["PS_APP_HOME"] = "<%= ps_app_home %>"
++       ENV["PS_HOME"] = "<%= ps_home %>"
++       ENV["PS_CFG_HOME"] = "<%= ps_cfg_home %>"
++       ENV["PS_CUST_HOME"] = "<%= ps_cust_home %>"
++       system("<%= ps_home.gsub('\\', '/') %>/appserv/psadmin -p stop -d <%= domain_name %>")
+      end
+ 
+      # This event triggers when the service receives a signal to pause.
+diff --git a/pt_config/lib/pt_comp_utils/database.rb b/pt_config/lib/pt_comp_utils/database.rb
+index 2a410fe..eb9d33f 100644
+--- a/pt_config/lib/pt_comp_utils/database.rb
++++ b/pt_config/lib/pt_comp_utils/database.rb
+@@ -217,7 +217,7 @@ module PtCompUtils
+     end
+     ps_cust_home_dir = get_registry_value('PS_CUST_HOME', false)
+     if ps_cust_home_dir.nil? == false
+-      ENV['PS_CUST_HOME'] = ps_app_home_dir
++      ENV['PS_CUST_HOME'] = ps_cust_home_dir
+     end
+   end
+ 
+diff --git a/pt_config/lib/pt_comp_utils/webserver.rb b/pt_config/lib/pt_comp_utils/webserver.rb
+index aae8a2c..af1e587 100644
+--- a/pt_config/lib/pt_comp_utils/webserver.rb
++++ b/pt_config/lib/pt_comp_utils/webserver.rb
+@@ -191,16 +191,19 @@ module PtCompUtils
+         cmd_suffix = ''
+         classpath = "%CLASSPATH%"
+         path_separator = ';'
++        shell_suffix = 'cmd'
+       elsif Facter.value(:osfamily) == 'AIX'
+         cmd_prefix = "su - #{os_user} -c \""
+         cmd_suffix = "\""
+         classpath = "$CLASSPATH"
+         path_separator = ':'
++        shell_suffix = 'sh'
+       else
+         cmd_prefix = "su - #{os_user} -p -c \""
+         cmd_suffix = "\""
+         classpath = "$CLASSPATH"
+         path_separator = ':'
++        shell_suffix = 'sh'
+       end
+ 
+       # setup weblogic environment
+@@ -210,14 +213,15 @@ module PtCompUtils
+       ENV['CLASSPATH'] = ".#{path_separator}#{wl_jar_file}"
+ 
+       java_opts = "-Dwlst.offline.log=#{wlst_log_file} -cp #{classpath}"
+-      wl_status_cmd = "#{cmd_prefix} java #{java_opts} weblogic.WLST " + \
+-                    "-skipWLSModuleScanning #{wl_script_file} #{cmd_suffix}"
++      wlst_cmd = File.join(bea_home, 'oracle_common', 'common', 'bin', "wlst.#{shell_suffix}")
++      wl_status_cmd = "#{cmd_prefix} #{wlst_cmd} #{wl_script_file} #{cmd_suffix}"
+ 
+       Puppet.debug("WLST status command: #{wl_status_cmd}")
+ 
+       count = 1
+       status = 'UNKNOWN'
+       while status != 'RUNNING'
++        Puppet.debug("[#{count}] Checking WebLogic running status...")
+         begin
+           Open3.popen3(wl_status_cmd) do |stdin, out, err|
+             stdin.close
+diff --git a/pt_config/lib/puppet/provider/psftdomain.rb b/pt_config/lib/puppet/provider/psftdomain.rb
+index c0e54b3..e4ee81e 100644
+--- a/pt_config/lib/puppet/provider/psftdomain.rb
++++ b/pt_config/lib/puppet/provider/psftdomain.rb
+@@ -280,8 +280,15 @@ class Puppet::Provider::PsftDomain < Puppet::Provider
+       psadmin_cmd = File.join(resource[:ps_home_dir], 'appserv', 'psadmin')
+ 
+       if Facter.value(:osfamily) == 'windows'
++        # generate a batch script to avoid environment variables being resolved when passed as %%ENV%%
++        psadmin_script_file = File.join(Dir.tmpdir(), 'psadmin_configure.bat')
+         command = "#{psadmin_cmd} #{domain_type} configure -d #{domain_name} #{config_args}"
+-        command_output = execute_command(command)
++        File.open(psadmin_script_file, 'w') do |script_file|
++          script_file.puts("#{command}")
++        end
++        File.chmod(0755, psadmin_script_file)
++        command_output = execute_command(psadmin_script_file)
++        File.delete(psadmin_script_file)
+       elsif  Facter.value(:osfamily) == 'Solaris'
+         command_output = domain_cmd('-', resource[:os_user], '-c',
+                           "#{psadmin_cmd} #{domain_type} configure -d " +
+@@ -295,18 +302,20 @@ class Puppet::Provider::PsftDomain < Puppet::Provider
+                           "#{psadmin_cmd} #{domain_type} configure -d " +
+                           "#{domain_name}  #{config_args}")
+       end
+-      Puppet.debug("Config outout: #{command_output}")
++      Puppet.debug("Config output: #{command_output}")
+ 
+     rescue Puppet::ExecutionFailure => e
+-     if Facter.value(:kernel) == 'Linux'
+-           command_output = domain_cmd('-m', '-s', '/bin/bash', '-l',  resource[:os_user], '-c',
+-           "#{psadmin_cmd} #{domain_type} configure -d " +
+-           "#{domain_name}  #{config_args}")
+-  
+-              if command_output.include? 'Process Scheduler Server configuration complete'
+-                 return command_output
+-              end
+-     end
++      if Facter.value(:osfamily) == 'windows'
++        File.delete(psadmin_script_file)
++      elsif Facter.value(:kernel) == 'Linux'
++        command_output = domain_cmd('-m', '-s', '/bin/bash', '-l',  resource[:os_user], '-c',
++        "#{psadmin_cmd} #{domain_type} configure -d " +
++        "#{domain_name}  #{config_args}")
++
++        if command_output.include? 'Process Scheduler Server configuration complete'
++          return command_output
++        end
++      end
+     raise Puppet::Error,
+           "Unable to configure domain: #{e.message}"
+     end
+diff --git a/pt_config/lib/puppet/provider/pt_appserver_domain/appserver_domain.rb b/pt_config/lib/puppet/provider/pt_appserver_domain/appserver_domain.rb
+index 2c08b7d..9427f1f 100644
+--- a/pt_config/lib/puppet/provider/pt_appserver_domain/appserver_domain.rb
++++ b/pt_config/lib/puppet/provider/pt_appserver_domain/appserver_domain.rb
+@@ -113,6 +113,7 @@ Puppet::Type.type(:pt_appserver_domain).provide :appserver_domain,
+     domain_name = resource[:domain_name]
+     cfg_home_dir = resource[:ps_cfg_home_dir]
+ 
++    FileUtils.mkdir_p cfg_home_dir
+     domain_dir = File.join(cfg_home_dir, 'appserv', domain_name)
+     if File.exist?(domain_dir)
+       Puppet.debug("Removing Application Server domain directory: #{domain_dir}")
+diff --git a/pt_config/lib/puppet/provider/pt_appserver_domain_boot/appserver_domain_boot.rb b/pt_config/lib/puppet/provider/pt_appserver_domain_boot/appserver_domain_boot.rb
+index 3ae2052..75fde2a 100644
+--- a/pt_config/lib/puppet/provider/pt_appserver_domain_boot/appserver_domain_boot.rb
++++ b/pt_config/lib/puppet/provider/pt_appserver_domain_boot/appserver_domain_boot.rb
+@@ -72,6 +72,10 @@ Puppet::Type.type(:pt_appserver_domain_boot).provide :appserver_domain_boot,
+       domain_name = resource[:domain_name]
+       ps_cfg_home = resource[:ps_cfg_home_dir]
+       ps_home     = resource[:ps_home_dir]
++      ps_app_home = resource[:ps_app_home_dir]
++      ps_cust_home = resource[:ps_cust_home_dir]
++      service_user = resource[:service_user]
++      service_pwd  = resource[:service_pwd]
+ 
+       appserver_win_service_file = File.join(ps_cfg_home, 'appserv', domain_name, "appserver_win_service.rb")
+       appserver_win_service_content = template('puppet:///modules/pt_config/pt_appserver/appserver_win_service.rb.erb',
+@@ -102,7 +106,9 @@ Puppet::Type.type(:pt_appserver_domain_boot).provide :appserver_domain_boot,
+           :binary_path_name => "#{ruby_executable.chomp} #{appserver_win_service_file}",
+           :load_order_group => 'Network',
+           :dependencies     => nil,
+-          :display_name     => appserver_domain_service
++          :display_name     => appserver_domain_service,
++          :service_start_name => "#{service_user}",
++          :password           => "#{service_pwd}"
+         })
+       rescue Exception => e
+         if (e.message.include?('The specified service already exists') ||
+diff --git a/pt_config/lib/puppet/provider/pt_prcs_domain_boot/prcs_domain_boot.rb b/pt_config/lib/puppet/provider/pt_prcs_domain_boot/prcs_domain_boot.rb
+index 9f472c6..b145d07 100644
+--- a/pt_config/lib/puppet/provider/pt_prcs_domain_boot/prcs_domain_boot.rb
++++ b/pt_config/lib/puppet/provider/pt_prcs_domain_boot/prcs_domain_boot.rb
+@@ -67,6 +67,10 @@ Puppet::Type.type(:pt_prcs_domain_boot).provide :prcs_domain_boot,
+       domain_name = resource[:domain_name]
+       ps_cfg_home = resource[:ps_cfg_home_dir]
+       ps_home     = resource[:ps_home_dir]
++      ps_app_home = resource[:ps_app_home_dir]
++      ps_cust_home = resource[:ps_cust_home_dir]
++      service_user = resource[:service_user]
++      service_pwd  = resource[:service_pwd]
+ 
+       prcs_win_service_file = File.join(ps_cfg_home, 'appserv', 'prcs', domain_name, "prcs_win_service.rb")
+       prcs_win_service_content = template('puppet:///modules/pt_config/pt_prcs/prcs_win_service.rb.erb',
+@@ -97,7 +101,9 @@ Puppet::Type.type(:pt_prcs_domain_boot).provide :prcs_domain_boot,
+           :binary_path_name => "#{ruby_executable.chomp} #{prcs_win_service_file}",
+           :load_order_group => 'Network',
+           :dependencies     => nil,
+-          :display_name     => prcs_domain_service
++          :display_name     => prcs_domain_service,
++          :service_start_name => "#{service_user}",
++          :password           => "#{service_pwd}"
+         })
+       rescue Exception => e
+         if (e.message.include?('The specified service already exists') ||
+diff --git a/pt_config/lib/puppet/provider/pt_webserver_domain/weblogic_domain.rb b/pt_config/lib/puppet/provider/pt_webserver_domain/weblogic_domain.rb
+index 9a5e080..0665ddd 100644
+--- a/pt_config/lib/puppet/provider/pt_webserver_domain/weblogic_domain.rb
++++ b/pt_config/lib/puppet/provider/pt_webserver_domain/weblogic_domain.rb
+@@ -120,6 +120,7 @@ Puppet::Type.type(:pt_webserver_domain).provide :weblogic_domain do
+ 
+     pre_create()
+     domain_name = resource[:domain_name]
++    bea_home = "#{@webserver_hash[:webserver_home]}"
+ 
+     install_dir = File.join(resource[:ps_home_dir], 'setup', 'PsMpPIAInstall')
+ 
+@@ -136,8 +137,9 @@ Puppet::Type.type(:pt_webserver_domain).provide :weblogic_domain do
+         begin
+           if Facter.value(:osfamily) == 'windows'
+             install_cmd = File.join(install_dir, 'setup.bat')
++            wl_env_cmd = File.join(bea_home, 'wlserver', 'server', 'bin', 'setWLSEnv.cmd')
+ 
+-            command = "#{install_cmd} -i silent -DRES_FILE_PATH=\"#{response_file}\""
++            command = "#{wl_env_cmd} && #{install_cmd} -i silent -DRES_FILE_PATH=\"#{response_file}\""
+             execute_command(command, {}, true)
+ 
+           elsif Facter.value(:osfamily) == 'Solaris'
+@@ -180,19 +182,7 @@ Puppet::Type.type(:pt_webserver_domain).provide :weblogic_domain do
+                 extract_file_path = File.join(temp_dir_name, "zip_extract.ps1")
+                 extract_file = File.open(extract_file_path, 'w')
+ 
+-                extract_file.puts("Try {")
+-                extract_file.puts("  $shell = new-object -com shell.application")
+-                extract_file.puts("  $zip = $shell.NameSpace(\"#{patch}\")")
+-                extract_file.puts("  ForEach($item in $zip.items()) {")
+-                extract_file.puts("    $shell.Namespace(\"#{domain_dir}\").CopyHere($item, 0x14)")
+-                extract_file.puts("  }")
+-                extract_file.puts("  Exit 0")
+-                extract_file.puts("}")
+-                extract_file.puts("Catch {")
+-                extract_file.puts("  $error_message = $_.Exception.Message")
+-                extract_file.puts("  Write-Host $error_message")
+-                extract_file.puts("  Exit 1")
+-                extract_file.puts("}")
++                extract_file.puts("Expand-Archive -Path \"#{patch}\" -DestinationPath \"#{domain_dir}\" -Force -ErrorAction Stop")
+                 extract_file.close
+                 File.chmod(0755, extract_file_path)
+                 Puppet.debug(File.read(extract_file_path))
+@@ -274,7 +264,7 @@ Puppet::Type.type(:pt_webserver_domain).provide :weblogic_domain do
+     # validate to make sure all the required parameters are specified to
+     # create a webserver domain
+ 
+-    # make sure the ps_home_dir and os_user exits
++    # make sure the ps_home_dir and os_user exist
+     ps_home_dir = resource[:ps_home_dir]
+     os_user = resource[:os_user]
+     validate_params_exists(os_user, ps_home_dir)
+@@ -288,9 +278,15 @@ Puppet::Type.type(:pt_webserver_domain).provide :weblogic_domain do
+ 
+   def post_create
+     domain_name = resource[:domain_name]
++    os_user = resource[:os_user]
+ 
+     Puppet.debug("Post Create domain: #{domain_name}")
+ 
++    if Facter.value(:osfamily) == 'windows' && os_user != nil
++      domain_dir  = resource[:ps_cfg_home_dir]
++      perm_cmd = "icacls #{domain_dir} /grant #{os_user}:(OI)(CI)F /T > NUL"
++      system(perm_cmd)
++    end
+     start_needed = false
+     if ! resource[:config_settings].nil?
+       @property_flush[:config_settings] = resource[:config_settings]
+diff --git a/pt_config/lib/puppet/provider/pt_webserver_domain_boot/webserver_domain_boot.rb b/pt_config/lib/puppet/provider/pt_webserver_domain_boot/webserver_domain_boot.rb
+index 7baca0b..86f36ed 100644
+--- a/pt_config/lib/puppet/provider/pt_webserver_domain_boot/webserver_domain_boot.rb
++++ b/pt_config/lib/puppet/provider/pt_webserver_domain_boot/webserver_domain_boot.rb
+@@ -65,6 +65,7 @@ Puppet::Type.type(:pt_webserver_domain_boot).provide :webserver_domain_boot do
+     domain_name = resource[:domain_name]
+     ps_cfg_home = resource[:ps_cfg_home_dir]
+     domain_dir = File.join(ps_cfg_home, 'webserv', domain_name, 'bin')
++    os_user = resource[:os_user]
+ 
+     Puppet.debug("Getting status of domain: #{domain_name}")
+ 
+@@ -72,6 +73,10 @@ Puppet::Type.type(:pt_webserver_domain_boot).provide :webserver_domain_boot do
+     domain_status = :running
+     if Facter.value(:osfamily) == 'windows'
+       status_cmd = File.join(domain_dir, 'singleserverStatus.cmd')
++      # make sure os user has access to execute command
++      pia_domain_dir = File.join(ps_cfg_home, 'webserv', domain_name)
++      perm_cmd = "icacls #{pia_domain_dir} /grant #{os_user}:(OI)(CI)F /T > NUL"
++      execute_command(perm_cmd)
+     else
+       os_user = resource[:os_user]
+       if os_user_exists?(os_user) == false
+@@ -147,6 +152,8 @@ Puppet::Type.type(:pt_webserver_domain_boot).provide :webserver_domain_boot do
+     domain_name = resource[:domain_name]
+     ps_cfg_home = resource[:ps_cfg_home_dir]
+     domain_dir = File.join(ps_cfg_home, 'webserv', domain_name, 'bin')
++    service_user = resource[:service_user]
++    service_pwd  = resource[:service_pwd]
+ 
+     Puppet.debug("Starting domain: #{domain_name}")
+ 
+@@ -181,7 +188,9 @@ Puppet::Type.type(:pt_webserver_domain_boot).provide :webserver_domain_boot do
+           :binary_path_name => "#{ruby_executable.chomp} #{pia_win_service_file}",
+           :load_order_group => 'Network',
+           :dependencies     => nil,
+-          :display_name     => pia_domain_service
++          :display_name     => pia_domain_service,
++          :service_start_name => "#{service_user}",
++          :password           => "#{service_pwd}"
+         })
+       rescue Exception => e
+         if (e.message.include?('The specified service already exists') ||
+diff --git a/pt_config/lib/puppet/type/pt_acm_plugin.rb b/pt_config/lib/puppet/type/pt_acm_plugin.rb
+index db887ff..20c14c0 100644
+--- a/pt_config/lib/puppet/type/pt_acm_plugin.rb
++++ b/pt_config/lib/puppet/type/pt_acm_plugin.rb
+@@ -71,13 +71,15 @@ module Puppet
+             raise ArgumentError, "Properties name/value pairs must be " +
+                                  "separated by an ="
+           else
+-            prop.split(', ').each do |prop_item|
+-              if ['pwd', 'pass'].any? {|var| prop_item.split('=')[0].include? var}
+-                Puppet.debug("Got the property: #{prop_item.gsub(prop_item.split('=')[1], '*****')}")
+-              else
+-                Puppet.debug("Got the property: #{prop_item}")
+-              end
+-            end
++            # DJI - 6/6/18 - .include? was causing errors when trying to hide passwords
++            #  The provider acm_plugin.rb will runs the same code
++            #prop.split(', ').each do |prop_item|
++            #  if ['pwd', 'pass'].any? {|var| prop_item.split('=')[0].include? var}
++            #    Puppet.debug("Got the property: #{prop_item.gsub(prop_item.split('=')[1], '*****')}")
++            #  else
++            #    Puppet.debug("Got the property: #{prop_item}")
++            #  end
++            #end
+           end
+         end
+       end
+diff --git a/pt_config/lib/puppet/type/pt_appserver_domain.rb b/pt_config/lib/puppet/type/pt_appserver_domain.rb
+index 5b511e7..b53d9ce 100644
+--- a/pt_config/lib/puppet/type/pt_appserver_domain.rb
++++ b/pt_config/lib/puppet/type/pt_appserver_domain.rb
+@@ -35,10 +35,16 @@ module Puppet
+ 
+     validate do
+       validate_domain_params(self[:os_user], self[:ps_home_dir])
+-      validate_keyvalue_array(self[:feature_settings])
++      if self[:ps_cfg_home_dir].nil?
++        self[:ps_cfg_home_dir] = self[:ps_home_dir]
++      end
++
++      if self[:ensure] == 'present'
++        validate_keyvalue_array(self[:feature_settings])
+ 
+-      if self[:ensure] == 'present' && self[:db_home_dir].nil?
+-        fail("db_home_dir attribute should be specified")
++        if self[:db_home_dir].nil?
++          fail("db_home_dir attribute should be specified")
++        end
+       end
+     end
+ 
+diff --git a/pt_config/lib/puppet/type/pt_appserver_domain_boot.rb b/pt_config/lib/puppet/type/pt_appserver_domain_boot.rb
+index f83a57a..bfc1654 100644
+--- a/pt_config/lib/puppet/type/pt_appserver_domain_boot.rb
++++ b/pt_config/lib/puppet/type/pt_appserver_domain_boot.rb
+@@ -48,6 +48,10 @@ module Puppet
+     parameter :os_user
+     parameter :ps_home_dir
+     parameter :ps_cfg_home_dir
++    parameter :ps_app_home_dir
++    parameter :ps_cust_home_dir
++    parameter :service_user
++    parameter :service_pwd
+ 
+     # Basically just a synonym for restarting.  Used to respond
+     # to events.
+diff --git a/pt_config/lib/puppet/type/pt_prcs_domain.rb b/pt_config/lib/puppet/type/pt_prcs_domain.rb
+index d0133ec..5c6614c 100644
+--- a/pt_config/lib/puppet/type/pt_prcs_domain.rb
++++ b/pt_config/lib/puppet/type/pt_prcs_domain.rb
+@@ -54,7 +54,7 @@ module Puppet
+       validate do |value|
+ 
+         prcs_features =
+-          [ "MSTRSRV", "APPENG", "KIOSK", "DOMAIN_GW", "SERVER_EVENTS" ]
++          [ "MSTRSRV", "APPENG", "PPM", "DOMAIN_GW", "SERVER_EVENTS" ]
+ 
+         value = [value] unless value.is_a? Array
+ 
+diff --git a/pt_config/lib/puppet/type/pt_prcs_domain_boot.rb b/pt_config/lib/puppet/type/pt_prcs_domain_boot.rb
+index c93d806..6ae11ef 100644
+--- a/pt_config/lib/puppet/type/pt_prcs_domain_boot.rb
++++ b/pt_config/lib/puppet/type/pt_prcs_domain_boot.rb
+@@ -48,6 +48,10 @@ module Puppet
+     parameter :os_user
+     parameter :ps_home_dir
+     parameter :ps_cfg_home_dir
++    parameter :ps_app_home_dir
++    parameter :ps_cust_home_dir
++    parameter :service_user
++    parameter :service_pwd
+ 
+     # Basically just a synonym for restarting.  Used to respond
+     # to events.
+diff --git a/pt_config/lib/puppet/type/pt_webserver_domain.rb b/pt_config/lib/puppet/type/pt_webserver_domain.rb
+index 86b72c8..fd4922b 100644
+--- a/pt_config/lib/puppet/type/pt_webserver_domain.rb
++++ b/pt_config/lib/puppet/type/pt_webserver_domain.rb
+@@ -41,10 +41,13 @@ module Puppet
+ 
+       validate_webserver_settings_array(ensure_value, self[:webserver_settings])
+ 
+-      # make sure atleast one site is specified
+-      site_list = self[:site_list]
+-      if site_list.nil? || site_list.empty?
+-        fail("Atleast one site needs to be specified #{self[:site_list].inspect}")
++      # Only verify site_list if not uninstalling
++      if ensure_value != "absent"
++        # make sure atleast one site is specified
++        site_list = self[:site_list]
++        if site_list.nil? || site_list.empty?
++          fail("Atleast one site needs to be specified #{self[:site_list].inspect}")
++        end
+       end
+ 
+       # make sure the  ps_cfg_home_dir is given
+@@ -232,11 +235,11 @@ module Puppet
+ 
+           profile_name = webprofile_settings_hash[key_profile_name]
+           # validate to make sure profile value is one of the predefined ones
+-          valid_profile_names = [ "DEV", "KIOSK", "PROD", "TEST" ]
+-          if ! valid_profile_names.include?(profile_name)
+-            fail("Specified profile name '#{profile_name}' is not one of " +
+-                 "valid profile names '#{valid_profile_names.inspect}")
+-          end
++          #valid_profile_names = [ "DEV", "KIOSK", "PROD", "TEST" ]
++          #if ! valid_profile_names.include?(profile_name)
++          #  fail("Specified profile name '#{profile_name}' is not one of " +
++          #       "valid profile names '#{valid_profile_names.inspect}")
++          #end
+           webprofile_settings_hash[key_profile_user]
+           profile_user_pwd = webprofile_settings_hash[key_profile_pwd]
+           if profile_user_pwd.match(/^(?=.*[\w]).{8,}$/).nil?
+diff --git a/pt_config/lib/puppet/type/pt_webserver_domain_boot.rb b/pt_config/lib/puppet/type/pt_webserver_domain_boot.rb
+index 7bede23..d0823ab 100644
+--- a/pt_config/lib/puppet/type/pt_webserver_domain_boot.rb
++++ b/pt_config/lib/puppet/type/pt_webserver_domain_boot.rb
+@@ -54,6 +54,8 @@ module Puppet
+     property :ensure
+     parameter :domain_name
+     parameter :os_user
++    parameter :service_user
++    parameter :service_pwd
+     parameter :ps_cfg_home_dir
+     parameter :webserver_settings
+ 
+diff --git a/pt_config/lib/puppet/type/shared/service_pwd.rb b/pt_config/lib/puppet/type/shared/service_pwd.rb
+new file mode 100644
+index 0000000..11d0eff
+--- /dev/null
++++ b/pt_config/lib/puppet/type/shared/service_pwd.rb
+@@ -0,0 +1,6 @@
++newparam(:service_pwd) do
++  include EasyType
++
++  desc "The service pwd."
++
++end
+diff --git a/pt_config/lib/puppet/type/shared/service_user.rb b/pt_config/lib/puppet/type/shared/service_user.rb
+new file mode 100644
+index 0000000..22d14e1
+--- /dev/null
++++ b/pt_config/lib/puppet/type/shared/service_user.rb
+@@ -0,0 +1,6 @@
++newparam(:service_user) do
++  include EasyType
++
++  desc "The service user."
++
++end
+diff --git a/pt_deploy/lib/puppet/provider/deployarchive.rb b/pt_deploy/lib/puppet/provider/deployarchive.rb
+index 273d2a4..9266f1a 100644
+--- a/pt_deploy/lib/puppet/provider/deployarchive.rb
++++ b/pt_deploy/lib/puppet/provider/deployarchive.rb
+@@ -215,20 +215,7 @@ class Puppet::Provider::DeployArchive < Puppet::Provider
+     extract_file_path = File.join(temp_dir_name, "zip_extract.ps1")
+     extract_file = File.open(extract_file_path, 'w')
+ 
+-    extract_file.puts("$zip_name = (Get-ChildItem \"#{zip_file_name}\").Name")
+-    extract_file.puts("Try {")
+-    extract_file.puts("  $shell = new-object -com shell.application")
+-    extract_file.puts("  $zip = $shell.NameSpace(\"#{zip_file_name}\")")
+-    extract_file.puts("  ForEach($item in $zip.items()) {")
+-    extract_file.puts("    $shell.Namespace(\"#{destination}\").CopyHere($item, 0x14)")
+-    extract_file.puts("  }")
+-    extract_file.puts("  Exit 0")
+-    extract_file.puts("}")
+-    extract_file.puts("Catch {")
+-    extract_file.puts("  $error_message = $_.Exception.Message")
+-    extract_file.puts("  Write-Host $error_message")
+-    extract_file.puts("  Exit 1")
+-    extract_file.puts("}")
++    extract_file.puts("Expand-Archive -Path \"#{zip_file_name}\" -DestinationPath \"#{destination}\" -Force -ErrorAction Stop")
+     extract_file.close
+     File.chmod(0755, extract_file_path)
+     Puppet.debug(File.read(extract_file_path))
+diff --git a/pt_deploy/lib/puppet/provider/pt_deploy_tuxedo/deploy_tuxedo.rb b/pt_deploy/lib/puppet/provider/pt_deploy_tuxedo/deploy_tuxedo.rb
+index 693f506..a2301e0 100644
+--- a/pt_deploy/lib/puppet/provider/pt_deploy_tuxedo/deploy_tuxedo.rb
++++ b/pt_deploy/lib/puppet/provider/pt_deploy_tuxedo/deploy_tuxedo.rb
+@@ -152,6 +152,18 @@ Puppet::Type.type(:pt_deploy_tuxedo).provide :deploy_tuxedo,
+       raise Puppet::ExecutionFailure, "Tuxedo home cloning failed, error message: [#{ex.message}]"
+     end
+ 
++    if Facter.value(:osfamily) == 'windows'
++      service_user = resource[:service_user]
++      service_pwd  = resource[:service_pwd]
++      if !service_user.nil? && !service_pwd.nil?
++        Service.configure(
++          :service_name       => 'ORACLE ProcMGR V12.2.2.0.0_VS2015',
++          :service_type       => Service::WIN32_OWN_PROCESS,
++          :service_start_name => service_user,
++          :password           => service_pwd
++        )
++      end
++    end
+     # install tuxedo patches if specified
+     patch_list = resource[:patch_list]
+     if ! patch_list.nil?
+@@ -164,9 +176,8 @@ Puppet::Type.type(:pt_deploy_tuxedo).provide :deploy_tuxedo,
+ 
+         if Facter.value(:osfamily) == 'windows'
+           Puppet.debug("Extracting Tuxedo patch on Windows platform")
+-
+-          extract_zip_script = generate_windows_unzip_script(patch, tuxedo_patch_dir)
+-          system("powershell -File #{extract_zip_script}")
++          ENV['JAVA_HOME'] = jdk_location
++          system("cd #{tuxedo_patch_dir} && #{jdk_location}\\bin\\jar -xvf #{patch}")
+           if $? == 0
+             Puppet.debug("Extraction of Tuxedo patch #{patch} successful")
+           else
+@@ -219,22 +230,23 @@ Puppet::Type.type(:pt_deploy_tuxedo).provide :deploy_tuxedo,
+           tuxedo_opatch_cmd = "#{tuxedo_home}\\OPatch\\opatch.bat"
+ 
+           tuxedo_patch_dir = tuxedo_patch_dir.gsub('/', '\\')
+-          patch_response_file = "#{tuxedo_patch_dir}\\opatch.rsp"
+-
+-          target = open(patch_response_file, 'w')
+-          target.puts("joe@foo.com")
+-          target.puts("")
+-          target.puts("")
+-          target.puts("")
+-          target.close()
+-          File.chmod(0755, patch_response_file)
+-
+-          patch_apply_cmd = "cd #{tuxedo_patch_dir} && #{tuxedo_opatch_cmd} apply #{tuxedo_patch_num} < #{patch_response_file}"
+-          system(patch_apply_cmd)
+-          if $? == 0
+-            Puppet.debug("Tuxedo Patch #{tuxedo_patch_num} install successful")
+-          else
+-            Puppet.debug("Tuxedo Patch #{tuxedo_patch_num} install failed")
++
++          patch_apply_cmd = "cd #{tuxedo_patch_dir} && #{tuxedo_opatch_cmd} apply #{tuxedo_patch_num} -silent"
++
++          begin
++            Puppet.debug("Tuxedo patch apply command #{patch_apply_cmd}")
++            system("#{patch_apply_cmd}")
++            if $? == 0
++              Puppet.debug("Tuxedo Patch #{tuxedo_patch_num} install successful")
++            else
++              raise Puppet::ExecutionFailure, "Tuxedo patch installation failed: #{patch} failed"
++            end
++          rescue Puppet::ExecutionFailure => e
++            Puppet.debug("Tuxedo patch installation failed: #{e.message}")
++            raise Puppet::Error, "Installation of tuxedo patch #{patch} failed: #{e.message}"
++          ensure
++            FileUtils.remove_entry(tuxedo_patch_dir)
++            Puppet.debug("Deleted Tuxedo patch installation directory #{tuxedo_patch_dir}")
+           end
+           # start the services
+           Puppet.debug("Starting Tuxedo ProcManager service [#{tuxedo_procmgr_service}]")
+@@ -424,6 +436,7 @@ Puppet::Type.type(:pt_deploy_tuxedo).provide :deploy_tuxedo,
+         # remove the registry entry if present
+         system("REG DELETE HKEY_LOCAL_MACHINE\\SOFTWARE\\ORACLE\\KEY_#{oracle_home_name} /f >NUL 2>&1")
+         system("REG DELETE HKEY_LOCAL_MACHINE\\SOFTWARE\\ORACLE\\TUXEDO\\12.2.2.0.0_VS2015 /f >NUL 2>&1")
++        system("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\ORACLE\\SALT\\12.2.2.0.0\\for Tuxedo 12.2.2.0.0\" /f >NUL 2>&1")
+ 
+         # remove services if present
+         remove_tuxedo_services()
+diff --git a/pt_deploy/lib/puppet/provider/pt_deploy_weblogic/deploy_weblogic.rb b/pt_deploy/lib/puppet/provider/pt_deploy_weblogic/deploy_weblogic.rb
+index 8f6b86c..8d09f60 100644
+--- a/pt_deploy/lib/puppet/provider/pt_deploy_weblogic/deploy_weblogic.rb
++++ b/pt_deploy/lib/puppet/provider/pt_deploy_weblogic/deploy_weblogic.rb
+@@ -88,7 +88,9 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
+     deploy_user = resource[:deploy_user]
+     deploy_group = resource[:deploy_user_group]
+ 
++    FileUtils.mkdir_p deploy_location
+     deploy_parent_location = File.dirname(deploy_location)
++    Puppet.debug("deploy_location: #{deploy_location}")
+     weblogic_archive_dir = Dir.mktmpdir(['wl', 'dir'], deploy_parent_location)
+     FileUtils.chmod(0755, weblogic_archive_dir)
+ 
+@@ -209,14 +211,13 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
+ 
+         if Facter.value(:osfamily) == 'windows'
+           Puppet.debug("Extracting WebLogic patch on Windows platform")
+-
+-          #extract_zip_script = generate_windows_unzip_script(patch, weblogic_patch_dir)
+-          #system("powershell -File #{extract_zip_script}")
+-          #if $? == 0
+-          #  Puppet.debug("Extraction of WebLogic patch #{patch} successful")
+-          #else
+-          #  raise Puppet::ExecutionFailure, "Extraction of WebLogic patch #{patch} failed"
+-          #end
++          ENV['JAVA_HOME'] = jdk_location
++          system("cd #{weblogic_patch_dir} && #{jdk_location}\\bin\\jar -xvf #{patch}")
++          if $? == 0
++            Puppet.debug("Extraction of WebLogic patch #{patch} successful")
++          else
++            raise Puppet::ExecutionFailure, "Extraction of WebLogic patch #{patch} failed"
++          end
+         else
+           Puppet.debug("Extracting WebLogic patch on Non Windows platform")
+           if Facter.value(:kernel) == 'AIX'
+@@ -231,29 +232,55 @@ Puppet::Type.type(:pt_deploy_weblogic).provide :deploy_weblogic,
+           change_ownership(deploy_user, deploy_group, weblogic_patch_dir)
+         end
+         begin
+-          if Facter.value(:osfamily) != 'windows'
+-            Puppet.debug("Installing WebLogic patch #{patch}")
+-            ENV['ORACLE_HOME'] = deploy_location
+-            Puppet.debug('Oracle Home environment variable' + ENV['ORACLE_HOME'])
+-
+-            # get the patch number
+-            weblogic_patch_num = Dir.entries(weblogic_patch_dir).reject {|f| !File.directory?(f) || f.include?('.')}[0]
+-            Puppet.debug('Installing WebLogic patch number ' + weblogic_patch_num)
++          Puppet.debug("Installing WebLogic patch #{patch}")
++          ENV['ORACLE_HOME'] = deploy_location
++          Puppet.debug('Oracle Home environment variable' + ENV['ORACLE_HOME'])
++          # get the patch number
++          weblogic_patch_num = Dir.entries(weblogic_patch_dir).reject {|f| f.include?('.')}[0]
++          Puppet.debug('Installing WebLogic patch number ' + weblogic_patch_num)
++          patch_dir = "#{weblogic_patch_dir}/#{weblogic_patch_num}"
++          opatch = Dir.glob("#{patch_dir}/**/opatch*.jar")
++          if Facter.value(:osfamily) == 'windows'
++            if opatch.empty?
++              Puppet.debug("Installing Weblogic patch #{weblogic_patch_num} from  #{patch_dir}")
++              patch_apply_cmd = "cd #{patch_dir} && #{deploy_location}\\OPatch\\opatch " + \
++                "apply -oh #{deploy_location} -silent -jdk #{jdk_location} -oop"
++            else
++              Puppet.debug("Installing OPatch patch #{weblogic_patch_num} from  #{patch_dir}")
++              patch_apply_cmd = "#{jdk_location}\\bin\\java -jar #{patch_dir}\\opatch_generic.jar -silent oracle_home=#{deploy_location}"
++            end
+ 
+-            patch_dir = "#{weblogic_patch_dir}/#{weblogic_patch_num}"
+-            Puppet.debug("Installing Weblogic patch #{weblogic_patch_num} from  #{patch_dir}")
++            patch_apply_cmd = patch_apply_cmd.gsub('/', '\\')
++            weblogic_patch_dir = weblogic_patch_dir.gsub('/', '\\')
++            Puppet.debug("Weblogic patch apply command #{patch_apply_cmd}")
++            system("#{patch_apply_cmd}")
++            if $? != 0
++              raise Puppet::ExecutionFailure, "Weblogic patch installation failed: #{patch} failed"
++            end
++          else
++            if opatch.empty?
++              Puppet.debug("Installing Weblogic patch #{weblogic_patch_num} from  #{patch_dir}")
++              patch_apply_cmd = "#{cmd_prefix} cd #{patch_dir} && #{deploy_location}/OPatch/opatch " + \
++                "apply -oh #{deploy_location} -silent -jdk #{jdk_location}#{cmd_suffix}"
++            else
++              Puppet.debug("Installing OPatch patch #{weblogic_patch_num} from  #{patch_dir}")
++              patch_apply_cmd = "java -jar #{patch_dir}/opatch_generic.jar -silent oracle_home=#{deploy_location}"
++            end
+ 
+-            patch_apply_cmd = "#{cmd_prefix} cd #{patch_dir} && #{deploy_location}/OPatch/opatch " + \
+-              " apply -silent -jdk #{jdk_location}#{cmd_suffix}"
+             Puppet.debug("Weblogic patch apply command #{patch_apply_cmd}")
+             Puppet::Util::Execution.execute(patch_apply_cmd, :failonfail => true)
+-            Puppet.debug('Weblogic patch installation successfully')
+           end
++          Puppet.debug('Weblogic patch installation completed successfully')
+         rescue Puppet::ExecutionFailure => e
+           Puppet.debug("Weblogic patch installation failed: #{e.message}")
+           raise Puppet::Error, "Installation of weblogic patch #{patch} failed: #{e.message}"
+         ensure
++          if Facter.value(:osfamily) == 'windows'
++            remove_cmd = "cd #{deploy_location} && md empty && robocopy empty #{weblogic_patch_dir} /E /PURGE /NOCOPY /MOVE"
++            system(remove_cmd)
++          end
+           FileUtils.remove_entry(weblogic_patch_dir)
++          Puppet.debug("Deleted Weblogic patch installation directory #{weblogic_patch_dir}")
+         end
+       end
+     else
+diff --git a/pt_deploy/lib/puppet/type/pt_deploy_tuxedo.rb b/pt_deploy/lib/puppet/type/pt_deploy_tuxedo.rb
+index 8c83cbd..9dfe36b 100644
+--- a/pt_deploy/lib/puppet/type/pt_deploy_tuxedo.rb
++++ b/pt_deploy/lib/puppet/type/pt_deploy_tuxedo.rb
+@@ -43,7 +43,7 @@ module Puppet
+       also be provided."
+ 
+       validate do
+-        if self[:ensure] == :present
++        if self[:ensure] == 'present'
+           if self[:archive_file].nil?
+             fail("archive_file attribute should be specified.")
+           end
+@@ -64,7 +64,7 @@ module Puppet
+             validate_oracle_inventory(inventory_location,
+                                       inventory_user, inventory_group)
+           end
+-        elsif (self[:ensure] == :absent) and
++        elsif (self[:ensure] == 'absent') and
+               (Facter.value(:osfamily) != 'windows')
+           if self[:deploy_user].nil?
+             fail("deploy_user attribute should be specified.")
+@@ -102,5 +102,7 @@ module Puppet
+       parameter :redeploy
+       parameter :remove
+       parameter :patch_list
++      parameter :service_user
++      parameter :service_pwd
+   end
+ end
+diff --git a/pt_deploy/lib/puppet/type/shared/service_pwd.rb b/pt_deploy/lib/puppet/type/shared/service_pwd.rb
+new file mode 100644
+index 0000000..11d0eff
+--- /dev/null
++++ b/pt_deploy/lib/puppet/type/shared/service_pwd.rb
+@@ -0,0 +1,6 @@
++newparam(:service_pwd) do
++  include EasyType
++
++  desc "The service pwd."
++
++end
+diff --git a/pt_deploy/lib/puppet/type/shared/service_user.rb b/pt_deploy/lib/puppet/type/shared/service_user.rb
+new file mode 100644
+index 0000000..22d14e1
+--- /dev/null
++++ b/pt_deploy/lib/puppet/type/shared/service_user.rb
+@@ -0,0 +1,6 @@
++newparam(:service_user) do
++  include EasyType
++
++  desc "The service user."
++
++end
+diff --git a/pt_profile/manifests/pt_app_deployment.pp b/pt_profile/manifests/pt_app_deployment.pp
+index 18364ef..9fb36d8 100644
+--- a/pt_profile/manifests/pt_app_deployment.pp
++++ b/pt_profile/manifests/pt_app_deployment.pp
+@@ -23,6 +23,7 @@ class pt_profile::pt_app_deployment {
+ 
+   # Hiera lookups
+   $ensure                   = hiera('ensure')
++  $remove_default            = $ensure ? { 'present' => false, default => true }
+   if !($ensure in [ 'present', 'absent']) {
+     fail("Invalid value for 'ensure'. It needs to be either 'present' or 'absent'.")
+   }
+@@ -56,13 +57,7 @@ class pt_profile::pt_app_deployment {
+   $ps_apphome_location = $ps_apphome_hiera['location']
+   notice ("PS App Home location is ${ps_apphome_location}")
+ 
+-  $ps_apphome_remove_value    = $ps_apphome_hiera['remove']
+-  if $ps_apphome_remove_value == undef {
+-    $ps_apphome_remove = true
+-  }
+-  else {
+-    $ps_apphome_remove = str2bool($ps_apphome_remove_value)
+-  }
++  $ps_apphome_remove   = any2bool(pick($ps_apphome_hiera['remove'], $remove_default))
+   notice ("PS App Home remove flag ${ps_apphome_remove}")
+ 
+   if $deploy_apphome_only == false {
+@@ -75,13 +70,7 @@ class pt_profile::pt_app_deployment {
+       $pi_home_location     = $pi_home_hiera['location']
+       notice ("PS App PI Home location is ${pi_home_location}")
+ 
+-      $pi_home_remove_value = $pi_home_hiera['remove']
+-      if $pi_home_remove_value == undef {
+-        $pi_home_remove     = true
+-      }
+-      else {
+-        $pi_home_remove     = str2bool($pi_home_remove_value)
+-      }
++      $pi_home_remove       = any2bool(pick($pi_home_hiera['remove'], $remove_default))
+     }
+     else {
+       $pi_home_remove = true
+@@ -93,13 +82,7 @@ class pt_profile::pt_app_deployment {
+       $ps_custhome_location = $ps_custhome_hiera['location']
+       notice ("PS Cust Home location is ${ps_custhome_location}")
+ 
+-      $ps_custhome_remove_value = $ps_custhome_hiera['remove']
+-      if $ps_custhome_remove_value == undef {
+-        $ps_custhome_remove = true
+-      }
+-      else {
+-        $ps_custhome_remove = str2bool($ps_custhome_remove_value)
+-      }
++      $ps_custhome_remove = any2bool(pick($ps_custhome_hiera['remove'], $remove_default))
+     }
+     else {
+       $ps_custhome_remove = true
+diff --git a/pt_profile/manifests/pt_appserver.pp b/pt_profile/manifests/pt_appserver.pp
+index 2853202..15cfa90 100644
+--- a/pt_profile/manifests/pt_appserver.pp
++++ b/pt_profile/manifests/pt_appserver.pp
+@@ -35,10 +35,8 @@ class pt_profile::pt_appserver {
+   $pshome_db_type       = $pshome_hiera['db_type']
+   $pshome_db_type_upper = upcase($pshome_db_type)
+ 
+-  $psapphome_hiera = hiera('ps_app_home', '')
+-  if ($psapphome_hiera) and ($psapphome_hiera != '') {
+-    $psapphome_location = $psapphome_hiera['location']
+-  }
++  $psapphome_location   = hiera('ps_app_home')
++
+   $setup_services     = hiera('setup_services')
+   if $setup_services == true {
+     if ($::kernel == 'Linux') or ($::kernel == 'DISABLEAIX') {
+@@ -81,6 +79,9 @@ class pt_profile::pt_appserver {
+       $env_settings_array = join_keys_to_values($env_settings, '=')
+       notify {"AppServer domain ${domain_name} Env settings: ${env_settings_array}\n":}
+     }
++    else {
++      $env_settings_array = undef
++    }
+     # get the database platform
+     $appserver_db_name = $db_settings['db_name']
+     $db_platform       = $db_settings['db_type']
+@@ -116,7 +117,8 @@ class pt_profile::pt_appserver {
+     elsif ($db_platform_upper == 'MSSQL') {
+       if $::osfamily != 'windows' {
+         fail("${db_platform_upper} database type is not supported for midtier setup on $::osfamily")
+-        }
++      }
++      $db_location = undef
+     }
+     else {
+       fail("Application Server domain setup for DB platform ${db_platform_upper} is not supported")
+@@ -164,6 +166,39 @@ class pt_profile::pt_appserver {
+       recreate         => $recreate,
+       require          => $appserver_require,
+     }
++
++    if $ensure == present {
++      $appserver_custom_file_settings = $appserver_domain_info['custom_file_settings']
++      if $appserver_custom_file_settings {
++        $appserver_custom_file_settings.each |$resource, $hash| {
++          $path = $hash['path']
++          if $path == undef {
++            $path = "${ps_cfg_home_dir}/appserv"
++          }
++          file { $resource:
++            ensure  => $hash['ensure'],
++            path    => $path,
++            source  => $hash['source'],
++            recurse => true,
++            force   => true,
++            require => Pt_appserver_domain[$domain_name]
++          }
++        }
++      }
++
++      if $::osfamily == 'windows' {
++        $service_registry_settings = $appserver_domain_info['service_registry_settings']
++        $service_registry_settings.each |$resource, $reg_data| {
++          registry::value { $resource:
++            key    => $reg_data['key'],
++            value  => $reg_data['value'],
++            type   => $reg_data['type'],
++            data   => $reg_data['data'],
++          }
++        }
++      }
++    }
++
+     if $setup_services == true {
+       if ($::kernel == 'Linux') or ($::kernel == 'DISABLEAIX') {
+ 
+diff --git a/pt_profile/manifests/pt_domain_boot.pp b/pt_profile/manifests/pt_domain_boot.pp
+index 9d25265..bbdd7d1 100644
+--- a/pt_profile/manifests/pt_domain_boot.pp
++++ b/pt_profile/manifests/pt_domain_boot.pp
+@@ -40,11 +40,15 @@ class pt_profile::pt_domain_boot {
+   $domain_type = hiera('domain_type', "all")
+   notify {"Domain Type [${domain_type}]\n":}
+ 
+-  $psapphome_hiera    = hiera('ps_app_home', '')
+-  if ($psapphome_hiera) and ($psapphome_hiera != '') {
+-    $psapphome_location = $psapphome_hiera['location']
+-    notify {"Domain boot PS APP Home: [${psapphome_location}]\n":}
+-  }
++  $psapphome_location = hiera('ps_app_home', '')
++
++  $appserver_service_user = hiera('appserver_service_user', undef)
++  $appserver_service_pwd  = hiera('appserver_service_pwd', undef)
++  $pia_service_user       = hiera('pia_service_user', undef)
++  $pia_service_pwd        = hiera('pia_service_pwd', undef)
++  $prcs_service_user      = hiera('prcs_service_user', undef)
++  $prcs_service_pwd       = hiera('prcs_service_pwd', undef)
++
+   if ($::osfamily == 'windows') and ($env_type == 'fulltier') {
+     $oracleserver_hiera    = hiera('oracle_server')
+     $oracle_listener_name = $oracleserver_hiera['listener_name']
+@@ -72,12 +76,29 @@ class pt_profile::pt_domain_boot {
+ 
+       $os_user          = $appserver_domain_info['os_user']
+       $ps_cfg_home_dir  = $appserver_domain_info['ps_cfg_home_dir']
+-
++      $ps_cust_home_dir = $appserver_domain_info['ps_cust_home_dir']
++
++      if $ensure == present and $appserver_service_user != undef {
++        acl { 'appserver_service_permission' :
++          target      => $ps_cfg_home_dir,
++          permissions => [
++            {
++              identity => $appserver_service_user,
++              rights   => ['full'],
++              purge    => false
++            }
++          ],
++        }
++      }
+       pt_appserver_domain_boot { $app_domain_name:
+         ensure           => $domain_action,
++        ps_app_home_dir  => $psapphome_location,
+         ps_home_dir      => $pshome_location,
+         ps_cfg_home_dir  => $ps_cfg_home_dir,
++        ps_cust_home_dir => $ps_cust_home_dir,
+         os_user          => $os_user,
++        service_user     => $appserver_service_user,
++        service_pwd      => $appserver_service_pwd,
+       }
+       if ($::osfamily == 'windows') and ($env_type == 'fulltier') {
+         $appserver_domain_service = "PsftAppServerDomain${app_domain_name}Service"
+@@ -98,12 +119,29 @@ class pt_profile::pt_domain_boot {
+ 
+       $os_user          = $prcs_domain_info['os_user']
+       $ps_cfg_home_dir  = $prcs_domain_info['ps_cfg_home_dir']
+-
++      $ps_cust_home_dir = $prcs_domain_info['ps_cust_home_dir']
++
++      if $ensure == present and $prcs_service_user != undef {
++        acl { 'prcs_service_permission' :
++          target      => $ps_cfg_home_dir,
++          permissions => [
++            {
++              identity => $prcs_service_user,
++              rights   => ['full'],
++              purge    => false
++            }
++          ],
++        }
++      }
+       pt_prcs_domain_boot { $prcs_domain_name:
+         ensure           => $domain_action,
++        ps_app_home_dir  => $psapphome_location,
+         ps_home_dir      => $pshome_location,
+         ps_cfg_home_dir  => $ps_cfg_home_dir,
++        ps_cust_home_dir => $ps_cust_home_dir,
+         os_user          => $os_user,
++        service_user     => $prcs_service_user,
++        service_pwd      => $prcs_service_pwd,
+       }
+       if ($::osfamily == 'windows') and ($env_type == 'fulltier') {
+         $prcs_domain_service = "PsftPrcsDomain${prcs_domain_name}Service"
+@@ -129,10 +167,23 @@ class pt_profile::pt_domain_boot {
+       validate_hash($webserver_settings)
+       $webserver_settings_array  = join_keys_to_values($webserver_settings, '=')
+ 
++      if $ensure == present and $pia_service_user != undef {
++        acl { "${ps_cfg_home_dir}/webserv":
++          permissions => [
++            {
++              identity => $pia_service_user,
++              rights   => ['full'],
++              purge    => false,
++            }
++          ],
++        }
++      }
+       pt_webserver_domain_boot { $pia_domain_name:
+         ensure             => $domain_action,
+         ps_cfg_home_dir    => $ps_cfg_home_dir,
+         os_user            => $os_user,
++        service_user       => $pia_service_user,
++        service_pwd        => $pia_service_pwd,
+         webserver_settings => $webserver_settings_array,
+       }
+     }
+diff --git a/pt_profile/manifests/pt_oracleserver.pp b/pt_profile/manifests/pt_oracleserver.pp
+index 2bb8ec5..56f17b0 100644
+--- a/pt_profile/manifests/pt_oracleserver.pp
++++ b/pt_profile/manifests/pt_oracleserver.pp
+@@ -23,6 +23,7 @@ class pt_profile::pt_oracleserver {
+ 
+   # Hiera lookups
+   $ensure                      = hiera('ensure')
++  $remove_default              = $ensure ? { 'present' => false, default => true }
+   if !($ensure in [ 'present', 'absent']) {
+     fail("Invalid value for 'ensure'. It needs to be either 'present' or 'absent'.")
+   }
+@@ -65,13 +66,7 @@ class pt_profile::pt_oracleserver {
+   $oracleserver_location = $oracleserver_hiera['location']
+   $oracleserver_listener_port = $oracleserver_hiera['listener_port']
+   $oracleserver_listener_name = $oracleserver_hiera['listener_name']
+-  $oracleserver_remove        = $oracleserver_hiera['remove']
+-  if $oracleserver_remove == undef {
+-    $remove = true
+-  }
+-  else {
+-    $remove = str2bool($oracleserver_remove)
+-  }
++  $oracleserver_remove        = any2bool(pick($oracleserver_hiera['remove'], $remove_default))
+ 
+   if $ensure == present {
+     $db_location = hiera('db_location')
+diff --git a/pt_profile/manifests/pt_pia.pp b/pt_profile/manifests/pt_pia.pp
+index 59569ea..1c2f6bd 100644
+--- a/pt_profile/manifests/pt_pia.pp
++++ b/pt_profile/manifests/pt_pia.pp
+@@ -51,32 +51,6 @@ class pt_profile::pt_pia {
+   }
+   $recreate = hiera('recreate', false)
+ 
+-  # setup database connectivity
+-  $db_platform = hiera('db_platform')
+-  $db_platform_upper = upcase($db_platform)
+-
+-  if $db_platform_upper == 'ORACLE' {
+-    $tns_admin_list = hiera('tns_admin_list')
+-    $tns_admin_list.each |$db_name, $db_info| {
+-      include ::pt_profile::pt_tns_admin
+-      realize ( ::Pt_setup::Tns_admin[$db_name] )
+-    }
+-  }
+-  elsif ($db_platform_upper == 'DB2ODBC') or ($db_platform_upper == 'DB2UNIX') {
+-    $db2_server_list = hiera('db2_server_list')
+-    $db2_server_list.each |$db_name, $db_info| {
+-      include ::pt_profile::pt_db2_setup
+-      realize ( ::Pt_setup::Db2_connectivity[$db_name] )
+-    }
+-  }
+-  else {
+-    $mssql_server_list = hiera('mssql_server_list')
+-    $mssql_server_list.each |$db_name, $db_info| {
+-      include ::pt_profile::pt_mssql_setup
+-      realize ( ::Pt_setup::Mssql_connectivity[$db_name] )
+-    }
+-  }
+-
+   $pia_domain_list = hiera('pia_domain_list')
+   $pia_domain_list.each |$domain_name, $pia_domain_info| {
+     notify {"Setting up PIA domain ${domain_name}":}
+@@ -117,6 +91,68 @@ class pt_profile::pt_pia {
+       site_list             => $pia_site_list_array,
+       recreate              => $recreate,
+     }
++
++    if $ensure == present {
++      $property_files = $pia_domain_info['property_file']
++      if $property_files {
++        notify {"Applying property file updates..":}
++        $property_files.each |$file, $data| {
++          notify {"Updating property file ${file}":}
++		  $defaults = {
++            'path'    => $file,
++            'section' => '',
++            'key_val_separator' => '='
++          }
++          $hash = {"" => $data}
++          create_ini_settings($hash,  $defaults)
++		}
++      }
++
++      $xml_files = $pia_domain_info['xml_file']
++      if $xml_files {
++        notify {"Applying xml file updates..":}
++        $xml_files.each |$file, $data| {
++          notify {"Updating xml file ${file}":}
++          $data.each |$resource, $hash| {
++            $content = $hash['content']
++            if $content {
++              xml_fragment { $resource:
++                ensure  => $hash['ensure'],
++                path    => "${file}",
++                xpath   => $hash['xpath'],
++                content => $content
++              }
++            }
++            else {
++              xml_fragment { $resource:
++                ensure  => $hash['ensure'],
++                path    => "${file}",
++                xpath   => $hash['xpath']
++              }
++            }
++          }
++        }
++      }
++
++      $pia_custom_file_settings = $pia_domain_info['custom_file_settings']
++      if $pia_custom_file_settings {
++        notify {"Applying Custom File Settings..":}
++        $pia_custom_file_settings.each |$resource, $hash| {
++          $path = $hash['path']
++          if $path == undef {
++            $path = "${ps_cfg_home_dir}/webserv/${domain_name}"
++          }
++          file { $resource:
++            ensure  => $hash['ensure'],
++            path    => $path,
++            source  => $hash['source'],
++            recurse => true,
++            force   => true
++          }
++        }
++      }
++    }
++
+     if $setup_services == true {
+       if ($::kernel == 'Linux') or ($::kernel == 'DISABLEAIX') {
+ 
+diff --git a/pt_profile/manifests/pt_prcs.pp b/pt_profile/manifests/pt_prcs.pp
+index 4761e43..b15c153 100644
+--- a/pt_profile/manifests/pt_prcs.pp
++++ b/pt_profile/manifests/pt_prcs.pp
+@@ -36,10 +36,7 @@ class pt_profile::pt_prcs {
+   $pshome_db_type       = $pshome_hiera['db_type']
+   $pshome_db_type_upper = upcase($pshome_db_type)
+ 
+-  $psapphome_hiera    = hiera('ps_app_home', '')
+-  if ($psapphome_hiera) and ($psapphome_hiera != '') {
+-    $psapphome_location = $psapphome_hiera['location']
+-  }
++  $psapphome_location   = hiera('ps_app_home')
+ 
+   $setup_services     = hiera('setup_services')
+   if $setup_services == true {
+@@ -83,6 +80,9 @@ class pt_profile::pt_prcs {
+       $env_settings_array = join_keys_to_values($env_settings, '=')
+       notify {"PRCS domain ${domain_name} Env settings: ${env_settings_array}\n":}
+     }
++    else {
++      $env_settings_array = undef
++    }
+     # get the database platform
+     $prcs_db_name      = $db_settings['db_name']
+     $db_platform       = $db_settings['db_type']
+@@ -119,6 +119,7 @@ class pt_profile::pt_prcs {
+       if $::osfamily != 'windows' {
+         fail("${db_platform_upper} database type is not supported for midtier setup on $::osfamily")
+       }
++      $db_location = undef
+     }
+     else {
+       fail("Process Scheduler domain setup for DB platform ${db_platform_upper} is not supported")
+diff --git a/pt_profile/manifests/pt_psft_environment.pp b/pt_profile/manifests/pt_psft_environment.pp
+index 8774123..aa4d81e 100644
+--- a/pt_profile/manifests/pt_psft_environment.pp
++++ b/pt_profile/manifests/pt_psft_environment.pp
+@@ -86,9 +86,11 @@ class pt_profile::pt_psft_environment {
+       fail("env_type parameter value ${env_type} is not supported for ${pshome_db_type_upper} \
+            database type")
+     }
++    $tns_location = undef
+   }
+   elsif ($pshome_db_type_upper == 'MSSQL') {
+     notice ("Database type is MSSQL, nothing to set for the user environment")
++    $tns_location = undef
+   }
+   else {
+     fail("DB platform ${pshome_db_type_upper} is not supported")
+@@ -100,15 +102,8 @@ class pt_profile::pt_psft_environment {
+ 
+       $pscfg_location     = hiera('ps_config_home')
+ 
+-      $psapphome_hiera    = hiera('ps_app_home', '')
+-      if ($psapphome_hiera) and ($psapphome_hiera != '') {
+-        $psapphome_location = $psapphome_hiera['location']
+-      }
+-
+-      $pscusthome_hiera   = hiera('ps_cust_home', '')
+-      if ($pscusthome_hiera) and ($pscusthome_hiera != '') {
+-        $pscusthome_location = $pscusthome_hiera['location']
+-      }
++      $psapphome_location  = hiera('ps_app_home', '')
++      $pscusthome_location = hiera('ps_cust_home', '')
+ 
+       $cobol_hiera        = hiera('cobol', '')
+       if ($cobol_hiera) and ($cobol_hiera != '') {
+diff --git a/pt_profile/manifests/pt_tools_deployment.pp b/pt_profile/manifests/pt_tools_deployment.pp
+index 286f0f2..9ed9974 100644
+--- a/pt_profile/manifests/pt_tools_deployment.pp
++++ b/pt_profile/manifests/pt_tools_deployment.pp
+@@ -23,6 +23,7 @@ class pt_profile::pt_tools_deployment {
+ 
+   ## Hiera lookups
+   $ensure                    = hiera('ensure')
++  $remove_default            = $ensure ? { 'present' => false, default => true }
+   if !($ensure in [ 'present', 'absent']) {
+     fail("Invalid value for 'ensure'. It needs to be either 'present' or 'absent'.")
+   }
+@@ -62,6 +63,15 @@ class pt_profile::pt_tools_deployment {
+     notice ("Inventory location is  ${inventory_location}")
+ 
+   }
++  else {
++    $inventory_location = undef
++    $oracle_install_group_name = undef
++    $oracle_install_user_name  = undef
++    $oracleclient_location     = undef
++    $oracleclient_remove       = undef
++    $tools_install_group_name  = undef
++    $tools_install_user_name   = undef
++  }
+   $deploy_pshome_only    = hiera('deploy_pshome_only', false)
+ 
+   $pshome_hiera          = hiera('ps_home')
+@@ -69,13 +79,7 @@ class pt_profile::pt_tools_deployment {
+   $pshome_location       = $pshome_hiera['location']
+   notice ("PS Home location is  ${pshome_location}")
+ 
+-  $pshome_remove_value  = $pshome_hiera['remove']
+-  if $pshome_remove_value == undef {
+-    $pshome_remove        = true
+-  }
+-  else {
+-  $pshome_remove        = str2bool($pshome_remove_value)
+-  }
++  $pshome_remove         = any2bool(pick($pshome_hiera['remove'], $remove_default))
+   notice ("PS Home remove is ${pshome_remove}")
+ 
+   if $deploy_pshome_only == false {
+@@ -84,65 +88,45 @@ class pt_profile::pt_tools_deployment {
+       if $db_platform == 'ORACLE' {
+         $oracleclient_hiera    = hiera('oracle_client')
+         $oracleclient_location = $oracleclient_hiera['location']
+-
+-        $oracleclient_remove_value  = $oracleclient_hiera['remove']
+-        if $oracleclient_remove_value == undef {
+-          $oracleclient_remove = true
+-        }
+-        else {
+-          $oracleclient_remove = str2bool($oracleclient_remove_value)
+-        }
++        $oracleclient_remove   = any2bool(pick($oracleclient_hiera['remove'], $remove_default))
+         notice ("Oracle client remove is ${oracleclient_remove}")
+       }
+     }
+     $jdk_hiera             = hiera('jdk')
+     $jdk_location          = $jdk_hiera['location']
+-    $jdk_remove_value      = $jdk_hiera['remove']
+-    if $jdk_remove_value == undef {
+-      $jdk_remove        = true
+-    }
+-    else {
+-    $jdk_remove            = str2bool($jdk_remove_value)
+-    }
++    $jdk_remove            = any2bool(pick($jdk_hiera['remove'], $remove_default))
+     notice ("JDK remove is ${jdk_remove}")
+ 
+     $weblogic_hiera        = hiera('weblogic')
+     $weblogic_location     = $weblogic_hiera['location']
+-    $weblogic_remove_value = $weblogic_hiera['remove']
+-    if $weblogic_remove_value == undef {
+-      $weblogic_remove        = true
+-    }
+-    else {
+-    $weblogic_remove       = str2bool($weblogic_remove_value)
+-    }
++    $weblogic_remove       = any2bool(pick($weblogic_hiera['remove'], $remove_default))
+     notice ("Weblogic remove is ${weblogic_remove}")
+ 
+     $tuxedo_hiera          = hiera('tuxedo')
+     $tuxedo_location       = $tuxedo_hiera['location']
+-    $tuxedo_remove_value   = $tuxedo_hiera['remove']
+-    if $tuxedo_remove_value == undef {
+-      $tuxedo_remove        = true
+-    }
+-    else {
+-    $tuxedo_remove         = str2bool($tuxedo_remove_value)
+-    }
++    $tuxedo_remove         = any2bool(pick($tuxedo_hiera['remove'], $remove_default))
+     notice ("Tuxedo remove is ${tuxedo_remove}")
+ 
+     $ohs_hiera             = hiera('setup_ohs', false)
+     if $ohs_hiera == true  {
+       $ohs_comp_hiera      = hiera('ohs')
+       $ohs_location        = $ohs_comp_hiera['location']
+-      $ohs_remove_value    = $ohs_comp_hiera['remove']
+-      if $ohs_remove_value == undef {
+-        $ohs_remove        = true
+-      }
+-      else {
+-      $ohs_remove          = str2bool($ohs_remove_value)
+-      }
++      $ohs_remove          = any2bool(pick($ohs_comp_hiera['remove'], $remove_default))
+       notice ("OHS remove is ${ohs_remove}")
+     }
++    else {
++      $ohs_location = undef
++      $ohs_remove = undef
++    }
+   }
+-  $redeploy = hiera('redeploy', false)
++  $redeploy               = hiera('redeploy', false)
++  $pshome_redeploy        = hiera('pshome_redeploy', false)
++  $oracleclient_redeploy  = hiera('oracleclient_redeploy', false)
++  $jdk_redeploy           = hiera('jdk_redeploy', false)
++  $weblogic_redeploy      = hiera('weblogic_redeploy', false)
++  $tuxedo_redeploy        = hiera('tuxedo_redeploy', false)
++  $ohs_redeploy           = hiera('ohs_redeploy', false)
++
+   class { '::pt_setup::tools_deployment':
+     ensure                 => $ensure,
+     deploy_pshome_only     => $deploy_pshome_only,
+@@ -154,17 +138,23 @@ class pt_profile::pt_tools_deployment {
+     db_type                => $db_type,
+     pshome_location        => $pshome_location,
+     pshome_remove          => $pshome_remove,
++    pshome_redeploy        => $pshome_redeploy,
+     inventory_location     => $inventory_location,
+     oracleclient_location  => $oracleclient_location,
+     oracleclient_remove    => $oracleclient_remove,
++    oracleclient_redeploy  => $oracleclient_redeploy,
+     jdk_location           => $jdk_location,
+     jdk_remove             => $jdk_remove,
++    jdk_redeploy           => $jdk_redeploy,
+     weblogic_location      => $weblogic_location,
+     weblogic_remove        => $weblogic_remove,
++    weblogic_redeploy      => $weblogic_redeploy,
+     tuxedo_location        => $tuxedo_location,
+     tuxedo_remove          => $tuxedo_remove,
++    tuxedo_redeploy        => $tuxedo_redeploy,
+     ohs_location           => $ohs_location,
+     ohs_remove             => $ohs_remove,
++    ohs_redeploy           => $ohs_redeploy,
+     redeploy               => $redeploy,
+   }
+   contain ::pt_setup::tools_deployment
+diff --git a/pt_role/lib/facter/redeploy.rb b/pt_role/lib/facter/redeploy.rb
+new file mode 100644
+index 0000000..dbe08ae
+--- /dev/null
++++ b/pt_role/lib/facter/redeploy.rb
+@@ -0,0 +1,41 @@
++Facter.add(:redeploy) do
++  setcode do
++    'false'
++  end
++end
++
++Facter.add(:pshome_redeploy) do
++  setcode do
++    'false'
++  end
++end
++
++Facter.add(:oracleclient_redeploy) do
++  setcode do
++    'false'
++  end
++end
++
++Facter.add(:jdk_redeploy) do
++  setcode do
++    'false'
++  end
++end
++
++Facter.add(:weblogic_redeploy) do
++  setcode do
++    'false'
++  end
++end
++
++Facter.add(:tuxedo_redeploy) do
++  setcode do
++    'false'
++  end
++end
++
++Facter.add(:ohs_redeploy) do
++  setcode do
++    'false'
++  end
++end
+\ No newline at end of file
+diff --git a/pt_setup/manifests/app_deployment.pp b/pt_setup/manifests/app_deployment.pp
+index 15b4408..fe30f74 100644
+--- a/pt_setup/manifests/app_deployment.pp
++++ b/pt_setup/manifests/app_deployment.pp
+@@ -47,14 +47,20 @@ class pt_setup::app_deployment (
+       realize ( ::File[$pt_location] )
+ 
+       # retrieve the archives for each App component
+-    $ps_apphome_archive_file = get_matched_file($app_archive_location, $ps_apphome_tag)
++      $archive_files = hiera('archive_files', '')
++      if $archive_files {
++        $ps_apphome_archive_file = $archive_files[$ps_apphome_tag]
++      } 
++      if $ps_apphome_archive_file == '' {
++        $ps_apphome_archive_file = get_matched_file($app_archive_location, $ps_apphome_tag)
++      }
+       if $ps_apphome_archive_file == '' {
+         fail("Unable to locate archive (tgz) file for PS_APP_HOME in ${app_archive_location}")
+       }
+     }
+     $ps_apphome_hiera = hiera('ps_app_home')
+-  $ps_apphome_extract_only_hiera = $ps_apphome_hiera['extract_only']
+-  $apphome_extract_only = str2bool($ps_apphome_extract_only_hiera)
++    $ps_apphome_extract_only_hiera = $ps_apphome_hiera['extract_only']
++    $apphome_extract_only = str2bool($ps_apphome_extract_only_hiera)
+ 
+     notice ("PS Application Home extract only flag: ${apphome_extract_only}")
+     $apphome_patches = hiera('apphome_patches', '')
+diff --git a/pt_setup/manifests/tools_deployment.pp b/pt_setup/manifests/tools_deployment.pp
+index 623cc30..dc695b0 100644
+--- a/pt_setup/manifests/tools_deployment.pp
++++ b/pt_setup/manifests/tools_deployment.pp
+@@ -29,17 +29,23 @@ class pt_setup::tools_deployment (
+   $db_type                = undef,
+   $pshome_location        = undef,
+   $pshome_remove          = true,
++  $pshome_redeploy        = false,
+   $inventory_location     = undef,
+   $oracleclient_location  = undef,
+   $oracleclient_remove    = true,
++  $oracleclient_redeploy  = false,
+   $jdk_location           = undef,
+   $jdk_remove             = true,
++  $jdk_redeploy           = false,
+   $weblogic_location      = undef,
+   $weblogic_remove        = true,
++  $weblogic_redeploy      = false,
+   $tuxedo_location        = undef,
+   $tuxedo_remove          = true,
++  $tuxedo_redeploy        = false,
+   $ohs_location           = undef,
+   $ohs_remove             = true,
++  $ohs_redeploy           = false,
+   $redeploy               = false,
+ ) {
+     notice ("Applying pt_setup::tools_deployment")
+@@ -51,6 +57,16 @@ class pt_setup::tools_deployment (
+     $oracleclient_tag = 'oracleclient'
+     $ohs_tag          = 'ohs'
+     $cobol_tag        = 'cobol'
++    $archive_files    = hiera('archive_files', '')
++    $domain_type      = hiera('domain_type')
++    $appserver_service_user = hiera('appserver_service_user', undef)
++    $appserver_service_pwd  = hiera('appserver_service_pwd', undef)
++    $pia_service_user       = hiera('pia_service_user', undef)
++    $pia_service_pwd        = hiera('pia_service_pwd', undef)
++    $prcs_service_user      = hiera('prcs_service_user', undef)
++    $prcs_service_pwd       = hiera('prcs_service_pwd', undef)
++    $tuxedo_service_user    = hiera('tuxedo_service_user', undef)
++    $tuxedo_service_pwd     = hiera('tuxedo_service_pwd', undef)
+ 
+     if $ensure == present {
+       $pt_location = hiera('pt_location')
+@@ -64,8 +80,13 @@ class pt_setup::tools_deployment (
+       realize ( ::File[$db_location] )
+ 
+       # retrieve the archives for each Tools component
+-      $pshome_archive_file   = get_matched_file($tools_archive_location,
+-                                              $pshome_tag)
++
++      if $archive_files {
++        $pshome_archive_file   = $archive_files[$pshome_tag]
++      } 
++      if $pshome_archive_file == '' {
++      	$pshome_archive_file = get_matched_file($tools_archive_location, $pshome_tag)
++      }
+       if $pshome_archive_file == '' {
+         fail("Unable to locate archive (tgz) file for PS_HOME in ${tools_archive_location}")
+       }
+@@ -73,31 +94,56 @@ class pt_setup::tools_deployment (
+     if $deploy_pshome_only == false {
+       if $ensure == present {
+         if ($::kernel != 'AIX') {
+-        $jdk_archive_file      = get_matched_file($tools_archive_location,
+-                                                $jdk_tag)
+-        if $jdk_archive_file == '' {
+-          fail("Unable to locate archive (tgz) file for JDK in ${tools_archive_location}")
+-        }
++          if $archive_files {
++            $jdk_archive_file   = $archive_files[$jdk_tag]
++          } 
++          if $jdk_archive_file == '' {
++            $jdk_archive_file   = get_matched_file($tools_archive_location, $jdk_tag)
++          }
++          if $jdk_archive_file == '' {
++            fail("Unable to locate archive (tgz) file for JDK in ${tools_archive_location}")
++          }
+         }
+ 		
+-        $weblogic_archive_file = get_matched_file($tools_archive_location,
++        if $archive_files {
++          $weblogic_archive_file   = $archive_files[$weblogic_tag]
++        } 
++        if $weblogic_archive_file == '' {
++          $weblogic_archive_file = get_matched_file($tools_archive_location,
+                                                 $weblogic_tag)
++        }
+         if $weblogic_archive_file == '' {
+           fail("Unable to locate archive (tgz) file for Weblogic in ${tools_archive_location}")
+         }
+-        $tuxedo_archive_file   = get_matched_file($tools_archive_location,
++
++        if $archive_files {
++          $tuxedo_archive_file   = $archive_files[$tuxedo_tag]
++        }
++        if $tuxedo_archive_file == '' {
++          $tuxedo_archive_file   = get_matched_file($tools_archive_location,
+                                                 $tuxedo_tag)
++        }
+         if $tuxedo_archive_file == '' {
+           fail("Unable to locate archive (tgz) file for Tuxedo in ${tools_archive_location}")
+         }
+       }
++      else {
++        $jdk_archive_file = nil
++        $weblogic_archive_file = nil
++        $tuxedo_archive_file = nil
++      }
+       $db_platform = hiera('db_platform')
+       if ($oracleclient_location) and ($db_platform == 'ORACLE') {
+         $deploy_oracleclient = true
+ 
+         if $ensure == present {
+-          $oracleclient_archive_file = get_matched_file($tools_archive_location,
++          if $archive_files {
++            $oracleclient_archive_file   = $archive_files[$oracleclient_tag]
++          } 
++          if $oracleclient_archive_file == '' {
++            $oracleclient_archive_file = get_matched_file($tools_archive_location,
+                                                       $oracleclient_tag)
++          }
+           if $oracleclient_archive_file == '' {
+             fail("Unable to locate archive (tgz) file for Oracle Client in ${tools_archive_location}")
+           }
+@@ -111,6 +157,11 @@ class pt_setup::tools_deployment (
+           notice ("Oracle Client patches do not exists")
+           $oracleclient_patches_list = undef
+         }
++        if ($redeploy == 'true') or ($oracleclient_redeploy == 'true') {
++          $oc_redeploy = true
++        } else {
++          $oc_redeploy = false
++        }
+         pt_deploy_oracleclient { $oracleclient_tag:
+           ensure                    => $ensure,
+           deploy_user               => $oracle_install_user,
+@@ -120,7 +171,7 @@ class pt_setup::tools_deployment (
+           oracle_inventory_location => $inventory_location,
+           oracle_inventory_user     => $oracle_install_user,
+           oracle_inventory_group    => $oracle_install_group,
+-          redeploy                  => $redeploy,
++          redeploy                  => $oc_redeploy,
+           remove                    => $oracleclient_remove,
+           patch_list                => $oracleclient_patches_list,
+         }
+@@ -148,6 +199,11 @@ class pt_setup::tools_deployment (
+       $tools_patches_list = undef
+     }
+ 
++    if ($redeploy == 'true') or ($pshome_redeploy == 'true') {
++      $pt_redeploy = true
++    } else {
++      $pt_redeploy = false
++    }
+     # deploy each Tools component
+     pt_deploy_pshome { $pshome_tag:
+       ensure            => $ensure,
+@@ -158,7 +214,7 @@ class pt_setup::tools_deployment (
+       deploy_location   => $pshome_location,
+       extract_only      => $extract_only,
+       unicode_db        => $unicode_db,
+-      redeploy          => $redeploy,
++      redeploy          => $pt_redeploy,
+       remove            => $pshome_remove,
+       patch_list        => $tools_patches_list,
+     }
+@@ -174,30 +230,82 @@ class pt_setup::tools_deployment (
+         notice ("JDK  patches do not exist")
+         $jdk_patches_list = undef
+       }
+-
++      if ($redeploy == 'true') or ($jdk_redeploy == 'true') {
++        $java_redeploy = true
++      } else {
++        $java_redeploy = false
++      }
+       pt_deploy_jdk { $jdk_tag:
+         ensure            => $ensure,
+         deploy_user       => $tools_install_user,
+         deploy_user_group => $tools_install_group,
+         archive_file      => $jdk_archive_file,
+         deploy_location   => $jdk_location,
+-        redeploy          => $redeploy,
++        redeploy          => $java_redeploy,
+         remove            => $jdk_remove,
+         patch_list        => $jdk_patches_list,
+       }
++      # Make sure both service and domain user have access to JDK
++      if $::osfamily == 'windows' and $ensure == present {
++        acl { 'jdk_domain_user' :
++          target      => $jdk_location,
++          purge       => false,
++          permissions => [
++            { identity => $::identity[user], rights => ['write','read','execute'] }
++          ],
++        }
++        if $appserver_service_user != undef and $domain_type in [ 'all', 'appserver', 'appbatch'] {
++          acl { 'jdk_app_service' :
++            target      => $jdk_location,
++            purge       => false,
++            permissions => [
++              { identity => $appserver_service_user, rights => ['write','read','execute'] }
++            ],
++          }
++        }
++        if $pia_service_user != undef and $domain_type in [ 'all', 'pia'] {
++          acl { 'jdk_pia_service' :
++            target      => $jdk_location,
++            purge       => false,
++            permissions => [
++              { identity => $pia_service_user, rights => ['write','read','execute'] }
++            ],
++          }
++        }
++        if $prcs_service_user != undef and $domain_type in [ 'all', 'prcs', 'appbatch'] {
++          acl { 'jdk_prcs_service' :
++            target      => $jdk_location,
++            purge       => false,
++            permissions => [
++              { identity => $prcs_service_user, rights => ['write','read','execute'] }
++            ],
++          }
++        }
+       }
+-	  
+-      $weblogic_patches = hiera('weblogic_patches', '')
+-      if ($weblogic_patches) and ($weblogic_patches != '') {
+-        notice ("Weblogic patches exists")
+-        $weblogic_patches_list = values($weblogic_patches)
+       }
++
++      if $domain_type == 'all' or $domain_type == 'pia' {
++        $weblogic_ensure = $ensure
++        $weblogic_patches = hiera('weblogic_patches', '')
++        if ($weblogic_patches) and ($weblogic_patches != '') {
++          notice ("Weblogic patches exists")
++          $weblogic_patches_list = values($weblogic_patches)
++        }  
++        else {
++          notice ("Weblogic patches do not exist")
++          $weblogic_patches_list = undef
++        }
++      } 
+       else {
+-        notice ("Weblogic patches do not exist")
+-        $weblogic_patches_list = undef
++        $weblogic_ensure = absent
++      }
++      if ($redeploy == 'true') or ($weblogic_redeploy == 'true') {
++        $wl_redeploy = true
++      } else {
++        $wl_redeploy = false
+       }
+       pt_deploy_weblogic { $weblogic_tag:
+-        ensure                    => $ensure,
++        ensure                    => $weblogic_ensure,
+         deploy_user               => $tools_install_user,
+         deploy_user_group         => $tools_install_group,
+         archive_file              => $weblogic_archive_file,
+@@ -206,21 +314,44 @@ class pt_setup::tools_deployment (
+         oracle_inventory_user     => $oracle_install_user,
+         oracle_inventory_group    => $oracle_install_group,
+         jdk_location              => $jdk_location,
+-        redeploy                  => $redeploy,
++        redeploy                  => $wl_redeploy,
+         remove                    => $weblogic_remove,
+         patch_list                => $weblogic_patches_list,
+       }
+-      $tuxedo_patches = hiera('tuxedo_patches', '')
+-      if ($tuxedo_patches) and ($tuxedo_patches != '') {
+-        notice ("Tuxedo patches exists")
+-        $tuxedo_patches_list = values($tuxedo_patches)
++      if $::osfamily == 'windows' and $weblogic_ensure == present and $pia_service_user != undef {
++        acl { "$weblogic_location":
++          permissions => [
++            { 
++              identity => $pia_service_user,
++              rights   => ['write','read','execute'],
++              purge    => false,
++            }
++          ],
++        }
++      }
++      if $domain_type == 'all' or $domain_type != 'pia' {
++        $tuxedo_ensure = $ensure
++        $tuxedo_patches = hiera('tuxedo_patches', '')
++        if ($tuxedo_patches) and ($tuxedo_patches != '') {
++          notice ("Tuxedo patches exists")
++          $tuxedo_patches_list = values($tuxedo_patches)
++        }
++        else {
++          notice ("Tuxedo patches do not exist")
++          $tuxedo_patches_list = undef
++        }
++
+       }
+       else {
+-        notice ("Tuxedo patches do not exist")
+-        $tuxedo_patches_list = undef
++        $tuxedo_ensure = absent
++      }
++      if ($redeploy == 'true') or ($tuxedo_redeploy == 'true') {
++        $tux_redeploy = true
++      } else {
++        $tux_redeploy = false
+       }
+       pt_deploy_tuxedo { $tuxedo_tag:
+-        ensure                    => $ensure,
++        ensure                    => $tuxedo_ensure,
+         deploy_user               => $tools_install_user,
+         deploy_user_group         => $tools_install_group,
+         archive_file              => $tuxedo_archive_file,
+@@ -228,10 +359,23 @@ class pt_setup::tools_deployment (
+         oracle_inventory_location => $inventory_location,
+         oracle_inventory_user     => $oracle_install_user,
+         oracle_inventory_group    => $oracle_install_group,
+-        redeploy                  => $redeploy,
++        redeploy                  => $tux_redeploy,
+         remove                    => $tuxedo_remove,
+         patch_list                => $tuxedo_patches_list,
+         jdk_location              => $jdk_location,
++        service_user              => $tuxedo_service_user,
++        service_pwd               => $tuxedo_service_pwd
++      }
++      if $::osfamily == 'windows' and $tuxedo_ensure == present and $tuxedo_service_user != undef {
++        acl { "$tuxedo_location":
++          permissions => [
++            {
++              identity => $tuxedo_service_user,
++              rights   => ['write','read','execute'],
++              purge    => false,
++            }
++          ],
++        }
+       }
+       if $ohs_location {
+         $deploy_ohs = true
+@@ -243,6 +387,11 @@ class pt_setup::tools_deployment (
+             fail("Unable to locate archive (tgz) file for OHS in ${tools_archive_location}")
+           }
+         }
++        if ($redeploy == 'true') or ($ohs_redeploy == 'true') {
++          $http_redeploy = true
++        } else {
++          $http_redeploy = false
++        }
+         pt_deploy_ohs { $ohs_tag:
+           ensure                    => $ensure,
+           deploy_user               => $tools_install_user,
+@@ -253,7 +402,7 @@ class pt_setup::tools_deployment (
+           oracle_inventory_user     => $oracle_install_user,
+           oracle_inventory_group    => $oracle_install_group,
+           jdk_location              => $jdk_location,
+-          redeploy                  => $redeploy,
++          redeploy                  => $http_redeploy,
+           remove                    => $ohs_remove,
+         }
+       }
