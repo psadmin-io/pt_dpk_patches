@@ -18,9 +18,12 @@ db_location:      "%{hiera('peoplesoft_base')}\\db"
 db_platform:      MSSQL
 setup_ohs:        false
 unicode_db:       false
-db_type:          DEMO
+db_type:          MSSQL
 install_type:     FRESH
 
+ps_app_home_location:   "%{hiera('pt_location')}\\ps_app_home\\cs
+ps_cfg_home_location:   "%{hiera('pt_location')}\\ps_cfg_home\\cs
+ps_cust_home_location:  "%{hiera('pt_location')}\\ps_cust_home\\cs
 ps_home_location:       "%{hiera('pt_location')}\\ps_home8.56.10"
 inventory_location:     "%{hiera('db_location')}\\oraInventory"
 oracle_client_location: "%{hiera('pt_location')}\\oracle-client\\12.1.0.2"
@@ -64,10 +67,14 @@ help_uri:              pt856pbr2
 
 ### PS Homes ###
 
-ps_app_home:           'E:\PSoft\pt\ps_home8.56.10'
-ps_config_home:        'E:\PSoft\pt\ps_cfg_home\cs'
-ps_cust_home:          'E:\PSHomes\cust_home\prd\cs'
-tuxedo_home:           'E:\PSoft\pt\bea\tuxedo\tuxedo12.2.2.0.0_VS2015'
+ps_app_home:
+  location: 'E:\PSoft\pt\ps_app_home'
+ps_cfg_home:
+  location: 'E:\PSoft\pt\ps_cfg_home\cs'
+ps_cust_home:
+  location: 'E:\PSoft\pt\ps_cust_home\cs'
+tuxedo_home:
+  location: 'E:\PSoft\pt\bea\tuxedo\tuxedo12.2.2.0.0_VS2015'
 
 
 ### Database ###
@@ -121,8 +128,8 @@ wsl_port:              6000
 appserver_domain_list:
   "%{hiera('appserver_domain_name')}":
     os_user:           "%{hiera('domain_user')}"
-    ps_cust_home_dir:  "%{hiera('ps_cust_home')}"
-    ps_cfg_home_dir:   "%{hiera('ps_config_home')}"
+    ps_cust_home_dir:  "%{hiera('ps_cust_home_location')}"
+    ps_cfg_home_dir:   "%{hiera('ps_cfg_home_location')}"
     template_type:     "%{hiera('appserver_template')}"
 
     # custom domain files
@@ -132,7 +139,7 @@ appserver_domain_list:
       appserver_domain_files:
         ensure:  present
         source:  'E:\PSoft\dpk\puppet\production\data\files\appserver'
-        path:    "%{hiera('ps_config_home')}\\appserv"
+        path:    "%{hiera('ps_cfg_home_location')}\\appserv"
 
     # Windows ONLY - Used to add environment paths to appserver service in registry
     service_registry_settings:
@@ -141,12 +148,12 @@ appserver_domain_list:
         value:  Environment
         type:   array
         data:
-          - PS_APP_HOME=%{lookup('ps_app_home')}
-          - PS_CFG_HOME=%{lookup('ps_config_home')}
-          - PS_CUST_HOME=%{lookup('ps_cust_home')}
+          - PS_APP_HOME=%{lookup('ps_app_home_location')}
+          - PS_CFG_HOME=%{lookup('ps_cfg_home_location')}
+          - PS_CUST_HOME=%{lookup('ps_cust_home_location')}
           - PS_HOME=%{lookup('ps_home_location')}
-          - TUXDIR=%{lookup('tuxedo_home')}
-          - PS_FILEDIR=%{lookup('ps_config_home')}\appserv\prcs\%{hiera('appserver_domain_name')}\files\PS_UPLOADS
+          - TUXDIR=%{lookup('tuxedo_home_location')}
+          - PS_FILEDIR=%{lookup('ps_config_home_location')}\appserv\prcs\%{hiera('appserver_domain_name')}\files\PS_UPLOADS
 
     db_settings:
       db_name:        "%{hiera('db_name')}"
@@ -216,8 +223,8 @@ prcs_domain_id:        PSNT
 prcs_domain_list:
   "%{hiera('prcs_domain_name')}":
     os_user:          "%{hiera('domain_user')}"
-    ps_cfg_home_dir:  "%{hiera('ps_config_home')}"
-    ps_cust_home_dir: "%{hiera('ps_cust_home')}"
+    ps_cfg_home_dir:  "%{hiera('ps_cfg_home_location')}"
+    ps_cust_home_dir: "%{hiera('ps_cust_home_location')}"
 
     # custom domain files
     # Specify source location to copy files from post install
@@ -226,7 +233,7 @@ prcs_domain_list:
       prcs_domain_files:
         ensure:  present
         source:  'E:\PSoft\dpk\puppet\production\data\files\prcs'
-        path:    "%{hiera('ps_config_home')}\\appserv\\prcs"
+        path:    "%{hiera('ps_cfg_home_location')}\\appserv\\prcs"
 
     # Windows ONLY - Used to add environment paths to prcs service in registry
     service_registry_settings:
@@ -235,12 +242,12 @@ prcs_domain_list:
         value:  Environment
         type:   array
         data:
-          - PS_APP_HOME=%{lookup('ps_app_home')}
-          - PS_CFG_HOME=%{lookup('ps_config_home')}
-          - PS_CUST_HOME=%{lookup('ps_cust_home')}
+          - PS_APP_HOME=%{lookup('ps_app_home_location')}
+          - PS_CFG_HOME=%{lookup('ps_cfg_home_location')}
+          - PS_CUST_HOME=%{lookup('ps_cust_home_location')}
           - PS_HOME=%{lookup('ps_home_location')}
-          - TUXDIR=%{lookup('tuxedo_home')}
-          - PS_FILEDIR=%{lookup('ps_config_home')}\appserv\prcs\%{hiera('prcs_domain_name')}\files\PS_UPLOADS
+          - TUXDIR=%{lookup('tuxedo_home_location')}
+          - PS_FILEDIR=%{lookup('ps_cfg_home_location')}\appserv\prcs\%{hiera('prcs_domain_name')}\files\PS_UPLOADS
 
     db_settings:
       db_name:        "%{hiera('db_name')}"
@@ -257,20 +264,20 @@ prcs_domain_list:
       Process Scheduler/DBBIN:                      'E:\Program Files\Microsoft SQL Server\140\Tools\Binn'
       Process Scheduler/Allow Dynamic Changes:      "Y"
       Process Scheduler/File Chunk Size:            8192
-      Process Scheduler/CBLBIN:                     "%{hiera('ps_cust_home')}\\CBLBIN%PS_COBOLTYPE%;%{hiera('ps_app_home')}\\CBLBIN%PS_COBOLTYPE%"
-      Process Scheduler/CRWRPTPATH:                 "%{hiera('ps_cust_home')}\\CRW;%{hiera('ps_app_home')}\\CRW"
+      Process Scheduler/CBLBIN:                     "%{hiera('ps_cust_home_location')}\\CBLBIN%PS_COBOLTYPE%;%{hiera('ps_app_home_location')}\\CBLBIN%PS_COBOLTYPE%"
+      Process Scheduler/CRWRPTPATH:                 "%{hiera('ps_cust_home_location')}\\CRW;%{hiera('ps_app_home_location')}\\CRW"
       Process Scheduler/WINWORD:                    'E:\Program Files\Microsoft Office\Office15'
       PSTOOLS/Enable Remote Administration:         0
       PSTOOLS/EnablePPM Agent:                      0
       PSTOOLS/Add to CLASSPATH:                     'E:\Program Files\Microsoft JDBC Driver 4.0 for SQL Server\sqljdbc_4.0\enu\sqljdbc4.jar'
       SQR/Enhanced HTML:                            "Y"
-      SQR/PSSQR:                                    "%{hiera('ps_cust_home')}\\sqr;%{hiera('ps_app_home')}\\sqr"
-      Data Mover/LastScriptsDir:                    "%{hiera('ps_cust_home')}\\scripts;%{hiera('ps_app_home')}\\scripts"
-      nVision/DrillDownDir:                         "%{hiera('ps_cust_home')}\\NVISION\\LAYOUT\\DRILLDN;%{hiera('ps_app_home')}\\NVISION\\LAYOUT\\DRILLDN"
-      nVision/LayoutDir:                            "%{hiera('ps_cust_home')}\\NVISION\\LAYOUT;%{hiera('ps_app_home')}\\NVISION\\LAYOUT"
-      nVision/MacroDir:                             "%{hiera('ps_cust_home')}\\EXCEL;%{hiera('ps_app_home')}\\EXCEL"
-      nVision/StyleDir:                             "%{hiera('ps_cust_home')}\\EXCEL\\STYLESHEETS;%{hiera('ps_app_home')}\\EXCEL\\STYLESHEETS"
-      nVision/TemplateDir:                          "%{hiera('ps_cust_home')}\\EXCEL;%{hiera('ps_app_home')}\\EXCEL"
+      SQR/PSSQR:                                    "%{hiera('ps_cust_home_location')}\\sqr;%{hiera('ps_app_home_location')}\\sqr"
+      Data Mover/LastScriptsDir:                    "%{hiera('ps_cust_home_location')}\\scripts;%{hiera('ps_app_home_location')}\\scripts"
+      nVision/DrillDownDir:                         "%{hiera('ps_cust_home_location')}\\NVISION\\LAYOUT\\DRILLDN;%{hiera('ps_app_home_location')}\\NVISION\\LAYOUT\\DRILLDN"
+      nVision/LayoutDir:                            "%{hiera('ps_cust_home_location')}\\NVISION\\LAYOUT;%{hiera('ps_app_home_location')}\\NVISION\\LAYOUT"
+      nVision/MacroDir:                             "%{hiera('ps_cust_home_location')}\\EXCEL;%{hiera('ps_app_home_location')}\\EXCEL"
+      nVision/StyleDir:                             "%{hiera('ps_cust_home_location')}\\EXCEL\\STYLESHEETS;%{hiera('ps_app_home_location')}\\EXCEL\\STYLESHEETS"
+      nVision/TemplateDir:                          "%{hiera('ps_cust_home_location')}\\EXCEL;%{hiera('ps_app_home_location')}\\EXCEL"
       Trace/MailErrorReport:                        "user1@domain.com;user2@domain.com"
       SMTP Settings/SMTPServer:                     "smtp1.domain.com"
       SMTP Settings/SMTPPort:                       25
@@ -286,7 +293,7 @@ prcs_domain_list:
 
 ### PIA ###
 
-pia_app_home:          "%{hiera('ps_config_home')}/webserv/%{hiera('pia_domain_name')}/applications/peoplesoft"
+pia_app_home:          "%{hiera('ps_cfg_home_location')}/webserv/%{hiera('pia_domain_name')}/applications/peoplesoft"
 pia_domain_name:       pt85610cs
 pia_gateway_user:      administrator
 pia_gateway_user_pwd:  'password'
@@ -302,7 +309,7 @@ webserver_type:        weblogic
 pia_domain_list:
   "%{hiera('pia_domain_name')}":
     os_user:               "%{hiera('domain_user')}"
-    ps_cfg_home_dir:       "%{hiera('ps_config_home')}"
+    ps_cfg_home_dir:       "%{hiera('ps_cfg_home_location')}"
     gateway_user:          "%{hiera('pia_gateway_user')}"
     gateway_user_pwd:      "%{hiera('pia_gateway_user_pwd')}"
     auth_token_domain:     ".%{::domain}"
@@ -315,7 +322,7 @@ pia_domain_list:
       pia_domain_files:
         ensure:  present
         source:  "E:\\PSoft\\dpk\\puppet\\production\\data\\files\\pia\\%{hiera('pia_domain_name')}"
-        path:    "%{hiera('ps_config_home')}\\webserv\\%{hiera('pia_domain_name')}"
+        path:    "%{hiera('ps_cfg_home_location')}\\webserv\\%{hiera('pia_domain_name')}"
 
     # Supports updating xml nodes
     # To modify other xml files, simply follow the format below
@@ -362,7 +369,7 @@ pia_domain_list:
         ig.connector.smtptargetconnector.host: "smtp1.domain.com"
         ig.DefaultServer.LocalNode:            "PT_LOCAL"
         ig.qas.repositoryHomeDir:              'E:\Temp\QASRepository'
-        secureFileKeystorePath:                "%{hiera('ps_config_home')}\\webserv\\%{hiera('pia_domain_name')}\\piaconfig\\keystore\\pskey"
+        secureFileKeystorePath:                "%{hiera('ps_cfg_home_location')}\\webserv\\%{hiera('pia_domain_name')}\\piaconfig\\keystore\\pskey"
         secureFileKeystorePasswd:              "{V1.1}XXXXXXXXXXXXXXXXXXXX=="
 
     webserver_settings:

@@ -791,23 +791,10 @@ index 4307425..d88e705 100644
      else {
        $ps_custhome_remove = true
 diff --git a/pt_profile/manifests/pt_appserver.pp b/pt_profile/manifests/pt_appserver.pp
-index c06ab3d..2114eb7 100644
+index c06ab3d..fb42a40 100644
 --- a/pt_profile/manifests/pt_appserver.pp
 +++ b/pt_profile/manifests/pt_appserver.pp
 @@ -35,10 +35,8 @@ class pt_profile::pt_appserver {
-   $pshome_db_type       = $pshome_hiera['db_type']
-   $pshome_db_type_upper = upcase($pshome_db_type)
- 
--  $psapphome_hiera = hiera('ps_app_home', '')
--  if ($psapphome_hiera) and ($psapphome_hiera != '') {
--    $psapphome_location = $psapphome_hiera['location']
--  }
-+  $psapphome_location   = hiera('ps_app_home')
-+
-   $setup_services     = hiera('setup_services')
-   if $setup_services == true {
-     if ($::kernel == 'Linux') or ($::kernel == 'DISABLEAIX') {
-@@ -81,6 +79,9 @@ class pt_profile::pt_appserver {
        $env_settings_array = join_keys_to_values($env_settings, '=')
        notify {"AppServer domain ${domain_name} Env settings: ${env_settings_array}\n":}
      }
@@ -853,12 +840,14 @@ index c06ab3d..2114eb7 100644
 +
 +      if $::osfamily == 'windows' {
 +        $service_registry_settings = $appserver_domain_info['service_registry_settings']
-+        $service_registry_settings.each |$resource, $reg_data| {
-+          registry::value { $resource:
-+            key    => $reg_data['key'],
-+            value  => $reg_data['value'],
-+            type   => $reg_data['type'],
-+            data   => $reg_data['data'],
++        if $service_registry_settings {
++          $service_registry_settings.each |$resource, $reg_data| {
++            registry::value { $resource:
++              key    => $reg_data['key'],
++              value  => $reg_data['value'],
++              type   => $reg_data['type'],
++              data   => $reg_data['data'],
++            }
 +          }
 +        }
 +      }
@@ -868,19 +857,13 @@ index c06ab3d..2114eb7 100644
        if ($::kernel == 'Linux') or ($::kernel == 'DISABLEAIX') {
  
 diff --git a/pt_profile/manifests/pt_domain_boot.pp b/pt_profile/manifests/pt_domain_boot.pp
-index 16694ab..f200f38 100644
+index 16694ab..3fac3cf 100644
 --- a/pt_profile/manifests/pt_domain_boot.pp
 +++ b/pt_profile/manifests/pt_domain_boot.pp
 @@ -40,11 +40,15 @@ class pt_profile::pt_domain_boot {
-   $domain_type = hiera('domain_type', "all")
-   notify {"Domain Type [${domain_type}]\n":}
- 
--  $psapphome_hiera    = hiera('ps_app_home', '')
--  if ($psapphome_hiera) and ($psapphome_hiera != '') {
--    $psapphome_location = $psapphome_hiera['location']
--    notify {"Domain boot PS APP Home: [${psapphome_location}]\n":}
--  }
-+  $psapphome_location = hiera('ps_app_home', '')
+     $psapphome_location = $psapphome_hiera['location']
+     notify {"Domain boot PS APP Home: [${psapphome_location}]\n":}
+   }
 +
 +  $appserver_service_user = hiera('appserver_service_user', undef)
 +  $appserver_service_pwd  = hiera('appserver_service_pwd', undef)
@@ -1079,22 +1062,10 @@ index 00aa5f1..4b34c8a 100644
        if ($::kernel == 'Linux') or ($::kernel == 'DISABLEAIX') {
  
 diff --git a/pt_profile/manifests/pt_prcs.pp b/pt_profile/manifests/pt_prcs.pp
-index 52435a0..5a96dee 100644
+index 52435a0..1bc2675 100644
 --- a/pt_profile/manifests/pt_prcs.pp
 +++ b/pt_profile/manifests/pt_prcs.pp
 @@ -36,10 +36,7 @@ class pt_profile::pt_prcs {
-   $pshome_db_type       = $pshome_hiera['db_type']
-   $pshome_db_type_upper = upcase($pshome_db_type)
- 
--  $psapphome_hiera    = hiera('ps_app_home', '')
--  if ($psapphome_hiera) and ($psapphome_hiera != '') {
--    $psapphome_location = $psapphome_hiera['location']
--  }
-+  $psapphome_location   = hiera('ps_app_home')
- 
-   $setup_services     = hiera('setup_services')
-   if $setup_services == true {
-@@ -83,6 +80,9 @@ class pt_profile::pt_prcs {
        $env_settings_array = join_keys_to_values($env_settings, '=')
        notify {"PRCS domain ${domain_name} Env settings: ${env_settings_array}\n":}
      }
@@ -1113,7 +1084,7 @@ index 52435a0..5a96dee 100644
      else {
        fail("Process Scheduler domain setup for DB platform ${db_platform_upper} is not supported")
 diff --git a/pt_profile/manifests/pt_psft_environment.pp b/pt_profile/manifests/pt_psft_environment.pp
-index 2a2128b..507304c 100644
+index 2a2128b..ef5fbf2 100644
 --- a/pt_profile/manifests/pt_psft_environment.pp
 +++ b/pt_profile/manifests/pt_psft_environment.pp
 @@ -86,9 +86,11 @@ class pt_profile::pt_psft_environment {
@@ -1128,24 +1099,6 @@ index 2a2128b..507304c 100644
    }
    else {
      fail("DB platform ${pshome_db_type_upper} is not supported")
-@@ -100,15 +102,8 @@ class pt_profile::pt_psft_environment {
- 
-       $pscfg_location     = hiera('ps_config_home')
- 
--      $psapphome_hiera    = hiera('ps_app_home', '')
--      if ($psapphome_hiera) and ($psapphome_hiera != '') {
--        $psapphome_location = $psapphome_hiera['location']
--      }
--
--      $pscusthome_hiera   = hiera('ps_cust_home', '')
--      if ($pscusthome_hiera) and ($pscusthome_hiera != '') {
--        $pscusthome_location = $pscusthome_hiera['location']
--      }
-+      $psapphome_location  = hiera('ps_app_home', '')
-+      $pscusthome_location = hiera('ps_cust_home', '')
- 
-       $cobol_hiera        = hiera('cobol_compiler', '')
-       if ($cobol_hiera) and ($cobol_hiera != '') {
 diff --git a/pt_profile/manifests/pt_tools_deployment.pp b/pt_profile/manifests/pt_tools_deployment.pp
 index 6406f4a..081179b 100644
 --- a/pt_profile/manifests/pt_tools_deployment.pp
