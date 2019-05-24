@@ -153,7 +153,7 @@ appserver_domain_list:
           - PS_CUST_HOME=%{lookup('ps_cust_home_location')}
           - PS_HOME=%{lookup('ps_home_location')}
           - TUXDIR=%{lookup('tuxedo_home_location')}
-          - PS_FILEDIR=%{lookup('ps_config_home_location')}\appserv\prcs\%{hiera('appserver_domain_name')}\files\PS_UPLOADS
+          - PS_FILEDIR=%{lookup('ps_cfg_home_location')}\appserv\prcs\%{hiera('appserver_domain_name')}\files\PS_UPLOADS
 
     db_settings:
       db_name:        "%{hiera('db_name')}"
