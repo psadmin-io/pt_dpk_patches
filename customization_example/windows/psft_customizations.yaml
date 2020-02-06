@@ -1,6 +1,8 @@
 ---
 
-### Deployment ###
+####################
+#    Deployment    #
+####################
 
 peoplesoft_base:  'E:\PSoft'
 
@@ -9,10 +11,9 @@ archive_location: "%{hiera('dpk_location')}\\archives"
 archive_files:
   weblogic:             "%{hiera('archive_location')}/pt-weblogic12.2.1.3.0.tgz"
   tuxedo:               "%{hiera('archive_location')}/pt-tuxedo12.2.2.0.0.tgz"
-  jdk:                  "%{hiera('archive_location')}/pt-jdk1.8.0_171.tgz"
-  pshome:               "%{hiera('archive_location')}/pt-pshome8.56.10.tgz"
+  jdk:                  "%{hiera('archive_location')}/pt-jdk1.8.0_231.tgz"
+  pshome:               "%{hiera('archive_location')}/pt-pshome8.57.12.tgz"
   oracleclient:         "%{hiera('archive_location')}/pt-oracleclient12.1.0.2.tgz"
-  psapphome:            "%{hiera('archive_location')}/fscm-psapphome027.tgz"
 pt_location:      "%{hiera('peoplesoft_base')}\\pt"
 db_location:      "%{hiera('peoplesoft_base')}\\db"
 db_platform:      MSSQL
@@ -21,41 +22,149 @@ unicode_db:       false
 db_type:          MSSQL
 install_type:     FRESH
 
+####################
+
+
+####################
+#     PS Homes     #
+####################
+
+ps_app_home:
+  location: 'E:\PSoft\pt\ps_app_home\cs'
+ps_cfg_home:
+  location: 'E:\PSoft\pt\ps_cfg_home\cs'
+ps_cust_home:
+  location: 'E:\PSoft\pt\ps_cust_home\cs'
+tuxedo_home:
+  location: 'E:\PSoft\pt\bea\tuxedo\tuxedo12.2.2.0.0_VS2015'
+
 ps_app_home_location:   "%{hiera('pt_location')}\\ps_app_home\\cs
 ps_cfg_home_location:   "%{hiera('pt_location')}\\ps_cfg_home\\cs
 ps_cust_home_location:  "%{hiera('pt_location')}\\ps_cust_home\\cs
-ps_home_location:       "%{hiera('pt_location')}\\ps_home8.56.10"
+ps_home_location:       "%{hiera('pt_location')}\\ps_home8.57.12"
 inventory_location:     "%{hiera('db_location')}\\oraInventory"
 oracle_client_location: "%{hiera('pt_location')}\\oracle-client\\12.1.0.2"
-jdk_location:           "%{hiera('pt_location')}\\jdk1.8.0_171"
+jdk_location:           "%{hiera('pt_location')}\\jdk"
 weblogic_location:      "%{hiera('pt_location')}\\bea"
 tuxedo_location:        "%{hiera('pt_location')}\\bea\\tuxedo"
 ohs_location:           "%{hiera('pt_location')}\\bea\\ohs"
 
+####################
 
-### Patches ###
+
+####################
+#     Security     #
+####################
+
+# Note: ALL Passwords below should be encrypted using eyaml. See 
+
+
+# The PeopleSoft access ID is the RDBMS ID with which PeopleSoft applications are ultimately connected to your database after the PeopleSoft system connects using the connect ID and validates the user ID and password.
+# An access ID typically has all the RDBMS privileges necessary to access and manipulate data for an entire PeopleSoft application. 
+access_id:                user
+access_pwd:               DEC::PKCS7[changeme]!
+
+# Domain Connection Password used by PIA to connect to application server via JOLT
+domain_conn_pwd:          DEC::PKCS7[changeme]!
+
+# Oracle Database admin password
+# Note: This is not used for MSSQL databases
+db_admin_pwd:             DEC::PKCS7[changeme]!
+
+# The connect ID performs the initial connection to the PeopleSoft database. 
+db_connect_id:            user
+db_connect_pwd:           DEC::PKCS7[changeme]!
+
+# Used by the following: 
+# 1. AppServer/Process Scheduler to connect to DB on startup
+#    Populates the following fields in app/prcs configs:  UserId, UserPswd
+# 2. DMS to update PSOPRDEFN with user and pwd
+#    Note: Requires change_password to be set to true
+db_user:                  user
+db_user_pwd:              DEC::PKCS7[changeme]!
+
+# The user used by PIA to access the integration gateway. (Default: administrator)
+pia_gateway_user:         administrator
+pia_gateway_user_pwd:     DEC::PKCS7[changeme]!
+
+# The PeopleSoft user id that will be used to load web profiles from the PIA. (Default: PTWEBSERVER)
+# Note: The PeopleSoft user specified here should have the delivered role "PeopleTools Web Server", which links to the delivered permission list "PTPT1500".
+pia_profile_user:         PTWEBSERVER
+pia_profile_user_pwd:     DEC::PKCS7[changeme]!
+
+## WebLogic
+# The administrator user id used to boot weblogic. (Default: system)
+webserver_admin_user:     system
+webserver_admin_user_pwd: DEC::PKCS7[changeme]!
+
+# The pskey keystore password
+# If empty or null, then the keystore will be opened without a passphrase.
+# This attribute is only used if KeyStores is CUSTOM_IDENTITY_AND_JAVA_STANDARD_TRUST, CUSTOM_IDENTITY_AND_CUSTOM_TRUST or CUSTOM_IDENTITY_AND_COMMAND_LINE_TRUST.
+webserver_keystore_identity_pwd:  DEC::PKCS7[changeme]!
+
+# The pskey keystore trust password
+# Note: If unsure, set to same as identity password
+webserver_keystore_trust_pwd:     DEC::PKCS7[changeme]!
+
+# The string alias used to store and retrieve the server's private key in the keystore.
+# This private key is associated with the server's digital certificate and is usually stored by the server hostname.
+webserver_private_key_alias:      alias
+
+# The passphrase used to retrieve the server's private key from the keystore.
+# This passphrase is assigned to the private key when it is generated.
+webserver_private_key_pwd:        DEC::PKCS7[changeme]!
+
+## Services
+
+# The user used to boot PIA services
+pia_service_user:        'domain\user'
+pia_service_pwd:         DEC::PKCS7[changeme]!
+
+# The user used to boot Process Scheduler services
+prcs_service_user:       'domain\user'
+prcs_service_pwd:        DEC::PKCS7[changeme]!
+
+# The user used to boot Application Server services
+appserver_service_user:  'domain\user'
+appserver_service_pwd:   DEC::PKCS7[changeme]!
+
+# The user used to boot Tuxedo services.
+tuxedo_service_user:     'domain\user'
+tuxedo_service_pwd:      DEC::PKCS7[changeme]!
+
+####################
+
+
+####################
+#     Patches      #
+####################
+
 # Note: Order matters so make sure to list pre-req patches first
 tuxedo_patches:
-  28038327: 'E:\PSoft\pt\patches\tuxedo\p28038327_122200_MSWIN-x86-64.zip'
+  30630977: 'E:\PSoft\pt\patches\tuxedo\p30630977_122200_MSWIN-x86-64.zip'
 
 weblogic_patches:
-  28186730: 'E:\PSoft\pt\patches\weblogic\p28186730_139400_Generic.zip'
-  27912627: 'E:\PSoft\pt\patches\weblogic\p27912627_122130_Generic.zip'
+  30675853: 'E:\PSoft\pt\patches\weblogic\p30675853_122130_Generic.zip'
 
-  
-### ACM ###
+####################
+
+
+####################
+#       ACM        #
+####################
 
 gateway_node_name:         PT_LOCAL
-
 
 # Set to false if not using
 run_preboot_config_setup:  false
 run_postboot_config_setup: false
 
+####################
 
-### General ###
 
-domain_conn_pwd:       'password'
+####################
+#     General      #
+####################
 
 # This setting has the following values: [all, appbatch, appserver, pia, prcs]
 # For example, if you only want to deploy PIA then this would be set to pia.
@@ -64,62 +173,33 @@ domain_type:           all
 domain_user:           'domain\user'
 help_uri:              pt856pbr2
 
-
-### PS Homes ###
-
-ps_app_home:
-  location: 'E:\PSoft\pt\ps_app_home'
-ps_cfg_home:
-  location: 'E:\PSoft\pt\ps_cfg_home\cs'
-ps_cust_home:
-  location: 'E:\PSoft\pt\ps_cust_home\cs'
-tuxedo_home:
-  location: 'E:\PSoft\pt\bea\tuxedo\tuxedo12.2.2.0.0_VS2015'
+####################
 
 
-### Database ###
+####################
+#     Database     #
+####################
 
-access_id:         sa1
-access_pwd:        'password'
 change_password:   false
-db_admin_pwd:      admin
-db_connect_id:     people
-db_connect_pwd:    'password'
 db_host_name:      sqlserv01.domain.com
 db_is_rac:         false
 db_name:           CSPRD
 db_platform:       MSSQL
 db_port:           1521
 db_service_name:   CSPRD
-# Used by the following: 
-# 1. AppServer/Process Scheduler to connect to DB on startup
-#    Populates the following fields in app/prcs configs:  UserId, UserPswd
-# 2. DMS to update PSOPRDEFN with user and pwd
-#    Note: Requires change_password to be set to true
-db_user:           user
-db_user_pwd:       'password'
 
-
-### Windows Services ###
-# This sets up all the required service user accounts and passwords
-
-pia_service_user:        'domain\user'
-pia_service_pwd:         'password'
-prcs_service_user:       'domain\user'
-prcs_service_pwd:        'password'
-appserver_service_user:  'domain\user'
-appserver_service_pwd:   'password'
-tuxedo_service_user:     'domain\user'
-tuxedo_service_pwd:      'password'
-
-### ODBC ###
+# ODBC
 mssql_server_list:
   "%{hiera('db_name')}":
     mss_server_name:  sqlserv01.domain.com
-    mss_odbc_name:    "ODBC Driver 13 for SQL Server"
+    mss_odbc_name:    "ODBC Driver 17 for SQL Server"
+
+####################
 
 
-### AppServer ###
+####################
+#     AppServer    #
+####################
 appserver_domain_name: CSPRD1
 appserver_template:    medium
 jolt_port:             5000
@@ -215,8 +295,13 @@ appserver_domain_list:
       SERVER_EVENTS: "Yes"
       DOMAIN_GW:     "No"
 
+####################
 
-### Process Scheduler ###
+
+####################
+#  PRCS Scheduler  #
+####################
+
 prcs_domain_name:      CSPRD1
 prcs_domain_id:        PSNT
 
@@ -290,13 +375,15 @@ prcs_domain_list:
       MSTRSRV:      "Yes"
       APPENG:       "Yes"
 
+####################
 
-### PIA ###
+
+####################
+#       PIA        #
+####################
 
 pia_app_home:          "%{hiera('ps_cfg_home_location')}/webserv/%{hiera('pia_domain_name')}/applications/peoplesoft"
 pia_domain_name:       pt85610cs
-pia_gateway_user:      administrator
-pia_gateway_user_pwd:  'password'
 pia_host_name:         "%{::fqdn}"
 pia_http_port:         80
 pia_https_port:        443
@@ -351,17 +438,17 @@ pia_domain_list:
     # To modify other property files, simply follow the format below
     property_file:
       "%{hiera('pia_app_home')}/PSIGW.war/WEB-INF/integrationGateway.properties":
-        ig.version:                  "8.56"
+        ig.version:                  "8.57"
         ig.isc.serverURL:            "//appserv01.domain.com:5000,//appserv01.domain.com:5100"
         ig.isc.userid:               "IGUSER"
         ig.isc.password:             "{V1.1}XXXXXXXXXXXXXXXXXXXX=="
-        ig.isc.toolsRel:             "8.56.10"
+        ig.isc.toolsRel:             "8.57.12"
         ig.isc.DomainConnectionPwd:  "{V1.1}XXXXXXXXXXXXXXXXXXXX=="
 
         ig.isc.PT_LOCAL.serverURL:           "//appserv01.domain.com:5000,//appserv01.domain.com:5100"
         ig.isc.PT_LOCAL.userid:              "IGUSER"
         ig.isc.PT_LOCAL.password:            "{V1.1}XXXXXXXXXXXXXXXXXXXX=="
-        ig.isc.PT_LOCAL.toolsRel:            "8.56.10"
+        ig.isc.PT_LOCAL.toolsRel:            "8.57.12"
         ig.isc.PT_LOCAL.DomainConnectionPwd: "{V1.1}XXXXXXXXXXXXXXXXXXXX=="
 
         ig.certificateAlias:                   "certalias"
@@ -375,8 +462,8 @@ pia_domain_list:
     webserver_settings:
       webserver_type:           "%{hiera('webserver_type')}"
       webserver_home:           "%{hiera('weblogic_location')}"
-      webserver_admin_user:     system
-      webserver_admin_user_pwd: password
+      webserver_admin_user:     "%{hiera('webserver_admin_user')}"
+      webserver_admin_user_pwd: "%{hiera('webserver_admin_user_pwd')}"
       webserver_admin_port:     "%{hiera('pia_http_port')}"
       webserver_http_port:      "%{hiera('pia_http_port')}"
       webserver_https_port:     "%{hiera('pia_https_port')}"
@@ -385,12 +472,12 @@ pia_domain_list:
       Servers/PIA:
         ListenAddress:                     0.0.0.0
         KeyStores:                         CustomIdentityAndCustomTrust
-        CustomIdentityKeyStorePassPhrase:  password
-        CustomTrustKeyStorePassPhrase:     password
+        CustomIdentityKeyStorePassPhrase:  "%{hiera('webserver_keystore_identity_pwd')}"
+        CustomTrustKeyStorePassPhrase:     "%{hiera('webserver_keystore_trust_pwd')}"
 
       Servers/PIA/SSL/PIA:
-        ServerPrivateKeyAlias:      certalias
-        ServerPrivateKeyPassPhrase: password
+        ServerPrivateKeyAlias:      "%{hiera('webserver_private_key_alias')}"
+        ServerPrivateKeyPassPhrase: "%{hiera('webserver_private_key_pwd')}"
 
       Servers/PIA/WebServer/PIA/WebServerLog/PIA:
         LoggingEnabled:         true
@@ -405,7 +492,12 @@ pia_domain_list:
 
         webprofile_settings:
           profile_name:        "%{hiera('pia_webprofile_name')}"
-          profile_user:        PTWEBSERVER
-          profile_user_pwd:    password
+          profile_user:        "%{hiera('pia_profile_user')}"
+          profile_user_pwd:    "%{hiera('pia_profile_user_pwd')}"
 
         report_repository_dir: "%{hiera('report_repository_dir')}"
+
+        # Use if you want to modify text.properties
+        #text_settings:
+
+####################
